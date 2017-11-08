@@ -35,7 +35,8 @@ typedef enum {
 	MODEL_PS2204 = 2204,
 	MODEL_PS2205 = 2205,
 	MODEL_PS2204A = 0xA204,
-	MODEL_PS2205A = 0xA205
+	MODEL_PS2205A = 0xA205,
+	MODEL_PS2405A = 2405
 } MODEL_TYPE;
 
 typedef struct {
@@ -80,8 +81,8 @@ typedef struct {
 } TRIGGER_CHANNEL;
 
 typedef struct {
-	int16_t DCcoupled;
-	int16_t range;
+	PS2000A_COUPLING coupling;
+	PS2000A_RANGE range;
 	int16_t enabled;
 	int16_t values[BUFFER_SIZE];
 } CHANNEL_SETTINGS;
@@ -217,8 +218,8 @@ void daq::setNumberSamples(int32_t no_of_samples) {
 }
 
 void daq::setCoupling(int index, int ch) {
-	acquisitionParameters.channelSettings[ch].DCcoupled = index;
-	unitOpened.channelSettings[ch].DCcoupled = (bool)index;
+	acquisitionParameters.channelSettings[ch].coupling = PS2000A_COUPLING(index);
+	unitOpened.channelSettings[ch].coupling = PS2000A_COUPLING(index);
 	daq::set_defaults();
 }
 
@@ -226,8 +227,9 @@ void daq::setRange(int index, int ch) {
 	if (index < 9) {
 		acquisitionParameters.channelSettings[ch].enabled = TRUE;
 		unitOpened.channelSettings[ch].enabled = TRUE;
-		acquisitionParameters.channelSettings[ch].range = index + 2;
-		unitOpened.channelSettings[ch].range = index + 2;
+		acquisitionParameters.channelSettings[ch].range = PS2000A_RANGE(index);
+		PS2000A_RANGE;
+		unitOpened.channelSettings[ch].range = PS2000A_RANGE(index);
 	} else if (index == 9) {
 		// set auto range
 	} else {
@@ -287,7 +289,7 @@ void daq::setAcquisitionParameters() {
 
 	for (int16_t ch(0); ch < maxChannels; ch++) {
 		unitOpened.channelSettings[ch].enabled = acquisitionParameters.channelSettings[ch].enabled;
-		unitOpened.channelSettings[ch].DCcoupled = acquisitionParameters.channelSettings[ch].DCcoupled;
+		unitOpened.channelSettings[ch].coupling = acquisitionParameters.channelSettings[ch].coupling;
 		unitOpened.channelSettings[ch].range = acquisitionParameters.channelSettings[ch].range;
 	}
 	
@@ -295,7 +297,15 @@ void daq::setAcquisitionParameters() {
 	set_defaults();
 
 	/* Trigger disabled */
-	ps2000_set_trigger(unitOpened.handle, PS2000A_NONE, 0, PS2000A_RISING, 0, acquisitionParameters.auto_trigger_ms);
+	ps2000aSetSimpleTrigger(
+		unitOpened.handle,			// handle
+		0,							// enable
+		PS2000A_CHANNEL_A,			// source
+		0,							// threshold
+		PS2000A_NONE,				// direction
+		0,							// delay
+		acquisitionParameters.auto_trigger_ms
+	);
 
 	/*  find the maximum number of samples, the time interval (in time_units),
 	*		 the most suitable time units, and the maximum oversample at the current timebase
@@ -334,35 +344,48 @@ std::array<std::vector<int32_t>, PS2000A_MAX_CHANNELS> daq::collectBlockData() {
 
 	/* Start collecting data,
 	*  wait for completion */
-	ps2000_run_block(
-		unitOpened.handle,
-		acquisitionParameters.no_of_samples,
-		acquisitionParameters.timebase,
-		acquisitionParameters.oversample,
-		&acquisitionParameters.time_indisposed_ms
+	ps2000aRunBlock(
+		unitOpened.handle,						// handle
+		0,										// noOfPreTriggerSamples
+		acquisitionParameters.no_of_samples,	// noOfPostTriggerSamples
+		acquisitionParameters.timebase,			// timebase
+		acquisitionParameters.oversample,		// oversample
+		&acquisitionParameters.time_indisposed_ms,	//timeIndisposedMs
+		0,										// segmentIndex
+		NULL,									// lpReady
+		NULL									// * pParameter
 	);
 
-	while (!ps2000_ready(unitOpened.handle)) {
+	short * ready;
+	ps2000aIsReady(unitOpened.handle, ready);
+	while (!ready) {
 		Sleep(10);
+		ps2000aIsReady(unitOpened.handle, ready);
 	}
 
-	ps2000_stop(unitOpened.handle);
+	for (int16_t ch(0); ch < 2; ch++) {
+		ps2000aSetDataBuffer(
+			unitOpened.handle,
+			PS2000A_CHANNEL(ch),
+			unitOpened.channelSettings[PS2000A_CHANNEL_A].values,
+			BUFFER_SIZE,
+			0,
+			PS2000A_RATIO_MODE_NONE
+		);
+	}
 
-	/* Should be done now...
-	*  get the times (in nanoseconds)
-	*  and the values (in ADC counts)
-	*/
-	ps2000_get_times_and_values(
+	short *overflow;
+	ps2000aGetValues(
 		unitOpened.handle,
-		times,
-		unitOpened.channelSettings[PS2000A_CHANNEL_A].values,
-		unitOpened.channelSettings[PS2000A_CHANNEL_B].values,
+		0,
+		&acquisitionParameters.no_of_samples,
 		NULL,
-		NULL,
-		&overflow,
-		acquisitionParameters.time_units,
-		acquisitionParameters.no_of_samples
+		PS2000A_RATIO_MODE_NONE,
+		0,
+		overflow
 	);
+
+	ps2000aStop(unitOpened.handle);
 
 	// create vector of voltage values
 	std::array<std::vector<int32_t>, PS2000A_MAX_CHANNELS> values;
@@ -390,9 +413,9 @@ void daq::scanManual() {
 		scanData.voltages[j] = j*scanParameters.amplitude / (scanParameters.nrSteps - 1) + scanParameters.offset;
 
 		// set voltages as DC value on the signal generator
-		ps2000_set_sig_gen_built_in(
+		ps2000aSetSigGenBuiltIn(
 			unitOpened.handle,		// handle of the oscilloscope
-			scanData.voltages[j],// offsetVoltage in microvolt
+			scanData.voltages[j],	// offsetVoltage in microvolt
 			0,						// peak to peak voltage in microvolt
 			(PS2000A_WAVE_TYPE)0,	// type of waveform
 			(float)0,				// startFrequency in Hertz
@@ -400,7 +423,12 @@ void daq::scanManual() {
 			0,						// increment
 			0,						// dwellTime, time in seconds between frequency changes in sweep mode
 			PS2000A_UPDOWN,			// sweepType
-			0						// sweeps, number of times to sweep the frequency
+			PS2000A_ES_OFF,
+			0,
+			0,						// sweeps, number of times to sweep the frequency
+			PS2000A_SIGGEN_RISING,
+			PS2000A_SIGGEN_NONE,
+			0
 		);
 
 		if (j == 0) {
@@ -537,17 +565,22 @@ void daq::lock() {
 		}
 
 		// set output voltage of the DAQ
-		ps2000_set_sig_gen_built_in(
-			unitOpened.handle,				// handle of the oscilloscope
-			currentVoltage * 1e6,			// offsetVoltage in microvolt
-			0,								// peak to peak voltage in microvolt
-			(PS2000A_WAVE_TYPE)5,			// type of waveform
-			(float)0,						// startFrequency in Hertz
-			(float)0,						// stopFrequency in Hertz
-			0,								// increment
-			0,								// dwellTime, time in seconds between frequency changes in sweep mode
-			PS2000A_UPDOWN,					// sweepType
-			0								// sweeps, number of times to sweep the frequency
+		ps2000aSetSigGenBuiltIn(
+			unitOpened.handle,		// handle of the oscilloscope
+			currentVoltage * 1e6,	// offsetVoltage in microvolt
+			0,						// peak to peak voltage in microvolt
+			(PS2000A_WAVE_TYPE)5,	// type of waveform
+			(float)0,				// startFrequency in Hertz
+			(float)0,				// stopFrequency in Hertz
+			0,						// increment
+			0,						// dwellTime, time in seconds between frequency changes in sweep mode
+			PS2000A_UPDOWN,			// sweepType
+			PS2000A_ES_OFF,
+			0,
+			0,						// sweeps, number of times to sweep the frequency
+			PS2000A_SIGGEN_RISING,
+			PS2000A_SIGGEN_NONE,
+			0
 		);
 	}
 
@@ -609,96 +642,96 @@ QVector<QPointF> daq::getStreamingBuffer(int ch) {
 * Starts the streaming of data
 ****************************************************************************/
 void daq::startStreaming(void) {
-	//uint32_t	i;
-	//FILE 		*fp;
-	int32_t 	ok;
-	//int16_t		ch;
-	//uint32_t	nPreviousValues = 0;
-	//double		startTime = 0.0;
-	uint32_t	appBufferSize = (int)(50000);
-	//uint32_t	overviewBufferSize = BUFFER_SIZE_STREAMING;
-	//uint32_t	sample_count;
+	////uint32_t	i;
+	////FILE 		*fp;
+	//int32_t 	ok;
+	////int16_t		ch;
+	////uint32_t	nPreviousValues = 0;
+	////double		startTime = 0.0;
+	//uint32_t	appBufferSize = (int)(50000);
+	////uint32_t	overviewBufferSize = BUFFER_SIZE_STREAMING;
+	////uint32_t	sample_count;
 
-	set_defaults();
+	//set_defaults();
 
-	// Simple trigger, 500mV, rising
-	ok = ps2000_set_trigger(
-		unitOpened.handle,														// handle of the oscilloscope
-		PS2000A_CHANNEL_A,														// source where to look for a trigger
-		mv_to_adc(0, unitOpened.channelSettings[PS2000A_CHANNEL_A].range),		// trigger threshold
-		PS2000A_RISING,															// direction, rising or falling
-		0,																		// delay
-		0																		// the delay in ms
-	);
+	//// Simple trigger, 500mV, rising
+	//ok = ps2000_set_trigger(
+	//	unitOpened.handle,														// handle of the oscilloscope
+	//	PS2000A_CHANNEL_A,														// source where to look for a trigger
+	//	mv_to_adc(0, unitOpened.channelSettings[PS2000A_CHANNEL_A].range),		// trigger threshold
+	//	PS2000A_RISING,															// direction, rising or falling
+	//	0,																		// delay
+	//	0																		// the delay in ms
+	//);
 
-	unitOpened.trigger.advanced.autoStop = 0;
-	unitOpened.trigger.advanced.totalSamples = 0;
-	unitOpened.trigger.advanced.triggered = 0;
+	//unitOpened.trigger.advanced.autoStop = 0;
+	//unitOpened.trigger.advanced.totalSamples = 0;
+	//unitOpened.trigger.advanced.triggered = 0;
 
-	//Reset global values
-	g_nValues = 0;
-	g_triggered = 0;
-	g_triggeredAt = 0;
-	g_startIndex = 0;
-	g_prevStartIndex = 0;
-	g_appBufferFull = 0;
+	////Reset global values
+	//g_nValues = 0;
+	//g_triggered = 0;
+	//g_triggeredAt = 0;
+	//g_startIndex = 0;
+	//g_prevStartIndex = 0;
+	//g_appBufferFull = 0;
 
-	bufferInfo.unit = unitOpened;
+	//bufferInfo.unit = unitOpened;
 
-	// Allocate memory for data arrays
+	//// Allocate memory for data arrays
 
-	// Max A buffer at index 0, min buffer at index 1
-	bufferInfo.appBuffers[PS2000A_CHANNEL_A * 2] = (int16_t *)calloc(appBufferSize, sizeof(int16_t));
-	bufferInfo.bufferSizes[PS2000A_CHANNEL_A * 2] = appBufferSize;
+	//// Max A buffer at index 0, min buffer at index 1
+	//bufferInfo.appBuffers[PS2000A_CHANNEL_A * 2] = (int16_t *)calloc(appBufferSize, sizeof(int16_t));
+	//bufferInfo.bufferSizes[PS2000A_CHANNEL_A * 2] = appBufferSize;
 
-	if (unitOpened.channelSettings[PS2000A_CHANNEL_B].enabled) {
-		// Max B buffer at index 2, min buffer at index 3
-		bufferInfo.appBuffers[PS2000A_CHANNEL_B * 2] = (int16_t *)calloc(appBufferSize, sizeof(int16_t));
-		bufferInfo.bufferSizes[PS2000A_CHANNEL_B * 2] = appBufferSize;
-	}
+	//if (unitOpened.channelSettings[PS2000A_CHANNEL_B].enabled) {
+	//	// Max B buffer at index 2, min buffer at index 3
+	//	bufferInfo.appBuffers[PS2000A_CHANNEL_B * 2] = (int16_t *)calloc(appBufferSize, sizeof(int16_t));
+	//	bufferInfo.bufferSizes[PS2000A_CHANNEL_B * 2] = appBufferSize;
+	//}
 
-	/* Collect data at 1us intervals
-	* 1000000 points after trigger with 0 aggregation
-	* Auto stop after the 1000000 samples
-	* Start it collecting,
-	* NOTE: The actual sampling interval used by the driver might not be that which is specified below. Use the sampling intervals
-	* returned by the ps2000_get_timebase function to work out the most appropriate sampling interval to use. As these are low memory
-	* devices, the fastest sampling intervals may result in lost data.
-	*/
-	ok = ps2000_run_streaming_ns(
-		unitOpened.handle,		// handle, handle of the oscilloscope
-		2,						// sample_interval, sample interval in time_units
-		PS2000A_US,				// time_units, units in which sample_interval is measured
-		NUM_STREAMING_SAMPLES,	// max_samples, maximum number of samples
-		0,						// auto_stop, boolean to indicate if streaming should stop when max_samples is reached
-		1,						// noOfSamplesPerAggregate, number of samples the driver will merge
-		50000		// size of the overview buffer
-	);
-	/* From here on, we can get data whenever we want...*/
+	///* Collect data at 1us intervals
+	//* 1000000 points after trigger with 0 aggregation
+	//* Auto stop after the 1000000 samples
+	//* Start it collecting,
+	//* NOTE: The actual sampling interval used by the driver might not be that which is specified below. Use the sampling intervals
+	//* returned by the ps2000_get_timebase function to work out the most appropriate sampling interval to use. As these are low memory
+	//* devices, the fastest sampling intervals may result in lost data.
+	//*/
+	//ok = ps2000_run_streaming_ns(
+	//	unitOpened.handle,		// handle, handle of the oscilloscope
+	//	2,						// sample_interval, sample interval in time_units
+	//	PS2000A_US,				// time_units, units in which sample_interval is measured
+	//	NUM_STREAMING_SAMPLES,	// max_samples, maximum number of samples
+	//	0,						// auto_stop, boolean to indicate if streaming should stop when max_samples is reached
+	//	1,						// noOfSamplesPerAggregate, number of samples the driver will merge
+	//	50000		// size of the overview buffer
+	//);
+	///* From here on, we can get data whenever we want...*/
 }
 
 void daq::collectStreamingData() {
 
-	unitOpened.trigger.advanced.autoStop = 0;
-	unitOpened.trigger.advanced.totalSamples = 0;
-	unitOpened.trigger.advanced.triggered = 0;
+	//unitOpened.trigger.advanced.autoStop = 0;
+	//unitOpened.trigger.advanced.totalSamples = 0;
+	//unitOpened.trigger.advanced.triggered = 0;
 
-	//Reset global values
-	g_nValues = 0;
-	g_triggered = 0;
-	g_triggeredAt = 0;
-	g_startIndex = 0;
-	g_prevStartIndex = 0;
-	g_appBufferFull = 0;
+	////Reset global values
+	//g_nValues = 0;
+	//g_triggered = 0;
+	//g_triggeredAt = 0;
+	//g_startIndex = 0;
+	//g_prevStartIndex = 0;
+	//g_appBufferFull = 0;
 
-	while (!unitOpened.trigger.advanced.autoStop && !g_appBufferFull) {
-		ps2000_get_streaming_last_values(
-			unitOpened.handle,				// handle, handle of the oscilloscope
-			&daq::ps2000FastStreamingReady2 // pointer to callback function to receive data
-		);
-	}
+	//while (!unitOpened.trigger.advanced.autoStop && !g_appBufferFull) {
+	//	ps2000_get_streaming_last_values(
+	//		unitOpened.handle,				// handle, handle of the oscilloscope
+	//		&daq::ps2000FastStreamingReady2 // pointer to callback function to receive data
+	//	);
+	//}
 
-	emit collectedData();
+	//emit collectedData();
 }
 
 /****************************************************************************
@@ -707,15 +740,15 @@ void daq::collectStreamingData() {
 * Stops the streaming of data
 ****************************************************************************/
 void daq::stopStreaming() {
-	int16_t		ch;
-	ps2000_stop(unitOpened.handle);
-	
-	// Free buffers
-	for (ch = 0; ch < unitOpened.noOfChannels; ch++) {
-		if (unitOpened.channelSettings[ch].enabled) {
-			free(bufferInfo.appBuffers[ch * 2]);
-		}
-	}
+	//int16_t		ch;
+	//ps2000_stop(unitOpened.handle);
+	//
+	//// Free buffers
+	//for (ch = 0; ch < unitOpened.noOfChannels; ch++) {
+	//	if (unitOpened.channelSettings[ch].enabled) {
+	//		free(bufferInfo.appBuffers[ch * 2]);
+	//	}
+	//}
 }
 
 /****************************************************************************
@@ -744,14 +777,23 @@ int16_t daq::mv_to_adc(int16_t mv, int16_t ch) {
 ****************************************************************************/
 void daq::set_defaults(void) {
 	int16_t ch = 0;
-	ps2000_set_ets(unitOpened.handle, PS2000A_ETS_OFF, 0, 0);
+
+	ps2000aSetEts(
+		unitOpened.handle,
+		PS2000A_ETS_OFF,
+		0,
+		0,
+		NULL
+	);
 
 	for (ch = 0; ch < unitOpened.noOfChannels; ch++) {
-		ps2000_set_channel(unitOpened.handle,
-			ch,
+		ps2000aSetChannel(
+			unitOpened.handle,
+			PS2000A_CHANNEL(ch),
 			unitOpened.channelSettings[ch].enabled,
-			unitOpened.channelSettings[ch].DCcoupled,
-			unitOpened.channelSettings[ch].range
+			unitOpened.channelSettings[ch].coupling,
+			unitOpened.channelSettings[ch].range,
+			0											// analog offset
 		);
 	}
 }
@@ -828,7 +870,7 @@ void  __stdcall daq::ps2000FastStreamingReady2(
 
 bool daq::connect() {
 	if (!unitOpened.handle) {
-		unitOpened.handle = ps2000a_open_unit();
+		PICO_STATUS status = ps2000aOpenUnit(&unitOpened.handle, NULL);
 		
 		get_info();
 
@@ -845,7 +887,7 @@ bool daq::connect() {
 
 bool daq::disconnect() {
 	if (unitOpened.handle) {
-		ps2000_close_unit(unitOpened.handle);
+		ps2000aCloseUnit(unitOpened.handle);
 		unitOpened.handle = NULL;
 	}
 	return false;
@@ -872,29 +914,32 @@ void daq::get_info(void) {
 		"Error Code       ",
 		"Kernel Driver    " 
 	};
-	int16_t	i;
+	
 	int8_t	line[80];
 	int32_t	variant;
+	short *requiredSize;
 
 	if (unitOpened.handle) {
-		for (i = 0; i < 6; i++) {
-			ps2000_get_unit_info(unitOpened.handle, line, sizeof(line), i);
+		ps2000aGetUnitInfo(
+			unitOpened.handle,
+			line,
+			sizeof(line),
+			requiredSize,
+			PICO_VARIANT_INFO
+		);
 
-			if (i == 3) {
-				variant = atoi((const char*)line);
+		variant = atoi((const char*)line);
 
-				// Identify if 2204A or 2205A
-				if (strlen((const char*)line) == 5) {
-					line[4] = toupper(line[4]);
+		// Identify if 2204A or 2205A
+		if (strlen((const char*)line) == 5) {
+			line[4] = toupper(line[4]);
 
-					// i.e 2204A -> 0xA204
-					if (line[1] == '2' && line[4] == 'A') {
-						variant += 0x9968;
-					}
-				}
+			// i.e 2204A -> 0xA204
+			if (line[1] == '2' && line[4] == 'A') {
+				variant += 0x9968;
 			}
-			printf("%s: %s\n", description[i], line);
 		}
+
 
 		switch (variant) {
 			//case MODEL_PS2104:
@@ -996,8 +1041,8 @@ void daq::get_info(void) {
 				unitOpened.model = MODEL_PS2405A;
 				unitOpened.firstRange = PS2000A_50MV;
 				unitOpened.lastRange = PS2000A_20V;
-				unitOpened.maxTimebase = PS2000A_MAX_TIMEBASE;
-				unitOpened.timebases = unitOpened.maxTimebase;
+	/*			unitOpened.maxTimebase = PS2000A_MAX_TIMEBASE;
+				unitOpened.timebases = unitOpened.maxTimebase;*/
 				unitOpened.noOfChannels = DUAL_SCOPE;
 				unitOpened.hasAdvancedTriggering = TRUE;
 				unitOpened.hasSignalGenerator = TRUE;
@@ -1012,7 +1057,7 @@ void daq::get_info(void) {
 		}
 
 		unitOpened.channelSettings[PS2000A_CHANNEL_A].enabled = 1;
-		unitOpened.channelSettings[PS2000A_CHANNEL_A].DCcoupled = 1;
+		unitOpened.channelSettings[PS2000A_CHANNEL_A].coupling = PS2000A_DC;
 		unitOpened.channelSettings[PS2000A_CHANNEL_A].range = PS2000A_5V;
 
 		if (unitOpened.noOfChannels == DUAL_SCOPE) {
@@ -1021,22 +1066,22 @@ void daq::get_info(void) {
 			unitOpened.channelSettings[PS2000A_CHANNEL_B].enabled = 0;
 		}
 
-		unitOpened.channelSettings[PS2000A_CHANNEL_B].DCcoupled = 1;
+		unitOpened.channelSettings[PS2000A_CHANNEL_B].coupling = PS2000A_DC;
 		unitOpened.channelSettings[PS2000A_CHANNEL_B].range = PS2000A_5V;
 
 		set_defaults();
 
 	} else {
-		printf("Unit Not Opened\n");
+		//printf("Unit Not Opened\n");
 
-		ps2000_get_unit_info(unitOpened.handle, line, sizeof(line), 5);
+		//ps2000_get_unit_info(unitOpened.handle, line, sizeof(line), 5);
 
-		printf("%s: %s\n", description[5], line);
-		unitOpened.model = MODEL_NONE;
-		unitOpened.firstRange = PS2000A_100MV;
-		unitOpened.lastRange = PS2000A_20V;
-		unitOpened.timebases = PS2105A_MAX_TIMEBASE;
-		unitOpened.noOfChannels = SINGLE_CH_SCOPE;
+		//printf("%s: %s\n", description[5], line);
+		//unitOpened.model = MODEL_NONE;
+		//unitOpened.firstRange = PS2000A_100MV;
+		//unitOpened.lastRange = PS2000A_20V;
+		//unitOpened.timebases = PS2105A_MAX_TIMEBASE;
+		//unitOpened.noOfChannels = SINGLE_CH_SCOPE;
 	}
 }
 
@@ -1048,13 +1093,18 @@ void daq::set_sig_gen() {
 		unitOpened.handle,				// handle of the oscilloscope
 		scanParameters.offset,			// offsetVoltage in microvolt
 		scanParameters.amplitude,		// peak to peak voltage in microvolt
-		(PS2000A_WAVE_TYPE) scanParameters.waveform,	// type of waveform
-		(float) scanParameters.frequency,	// startFrequency in Hertz
-		(float) scanParameters.frequency,	// stopFrequency in Hertz
+		(PS2000A_WAVE_TYPE)scanParameters.waveform,	// type of waveform
+		(float)scanParameters.frequency,// startFrequency in Hertz
+		(float)scanParameters.frequency,// stopFrequency in Hertz
 		0,								// increment
 		0,								// dwellTime, time in seconds between frequency changes in sweep mode
 		PS2000A_UPDOWN,					// sweepType
-		0								// sweeps, number of times to sweep the frequency
+		PS2000A_ES_OFF,
+		0,
+		0,								// sweeps, number of times to sweep the frequency
+		PS2000A_SIGGEN_RISING,
+		PS2000A_SIGGEN_NONE,
+		0
 	);
 
 }

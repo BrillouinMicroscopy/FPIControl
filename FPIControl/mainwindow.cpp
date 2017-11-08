@@ -398,7 +398,7 @@ void MainWindow::on_decrementVoltage_clicked() {
 	d.decrementPiezoVoltage();
 }
 
-void MainWindow::updateLiveView(std::array<QVector<QPointF>, PS2000_MAX_CHANNELS> &data) {
+void MainWindow::updateLiveView(std::array<QVector<QPointF>, PS2000A_MAX_CHANNELS> &data) {
 	if (view == 0) {
 		int channel = 0;
 		foreach(QtCharts::QLineSeries* series, liveViewPlots) {
@@ -460,8 +460,8 @@ void MainWindow::updateAcquisitionParameters(ACQUISITION_PARAMETERS acquisitionP
 	ui->chARange->setCurrentIndex(acquisitionParameters.channelSettings[0].range - 2);
 	ui->chBRange->setCurrentIndex(acquisitionParameters.channelSettings[1].range - 2);
 	// set coupling
-	ui->chACoupling->setCurrentIndex(acquisitionParameters.channelSettings[0].DCcoupled);
-	ui->chBCoupling->setCurrentIndex(acquisitionParameters.channelSettings[1].DCcoupled);
+	ui->chACoupling->setCurrentIndex(acquisitionParameters.channelSettings[0].coupling);
+	ui->chBCoupling->setCurrentIndex(acquisitionParameters.channelSettings[1].coupling);
 }
 
 void MainWindow::updateLockState(LOCKSTATE lockState) {

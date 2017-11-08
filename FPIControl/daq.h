@@ -21,8 +21,8 @@
 #define DUAL_SCOPE 2					// Dual channel scope
 
 typedef struct {
-	int16_t DCcoupled;
-	int16_t range;
+	PS2000A_COUPLING coupling;
+	PS2000A_RANGE range;
 	int16_t enabled;
 } DEFAULT_CHANNEL_SETTINGS;
 
@@ -31,13 +31,13 @@ typedef struct {
 	int32_t 	time_interval;
 	int16_t 	time_units;
 	int16_t 	oversample;
-	int32_t 	no_of_samples = 1000;	// set to a value which allows a clean frequency analysis for 5000 Hz modulation frequency at timebase 10
+	uint32_t 	no_of_samples = 1000;	// set to a value which allows a clean frequency analysis for 5000 Hz modulation frequency at timebase 10
 	int32_t 	max_samples;
 	int32_t 	time_indisposed_ms;
 	int16_t		timebase = 10;
 	DEFAULT_CHANNEL_SETTINGS channelSettings[2] = {
-		{0, PS2000A_RANGE::PS2000A_200MV, TRUE},
-		{0, PS2000A_RANGE::PS2000A_500MV, TRUE}
+		{PS2000A_DC, PS2000A_RANGE::PS2000A_200MV, TRUE},
+		{PS2000A_DC, PS2000A_RANGE::PS2000A_500MV, TRUE}
 	};
 } ACQUISITION_PARAMETERS;
 
