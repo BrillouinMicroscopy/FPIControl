@@ -9,7 +9,7 @@
 #include <chrono>
 #include <ctime>
 
-#include "ps2000.h"
+#include "ps2000aApi.h"
 #include "PDH.h"
 #include "generalmath.h"
 
@@ -36,8 +36,8 @@ typedef struct {
 	int32_t 	time_indisposed_ms;
 	int16_t		timebase = 10;
 	DEFAULT_CHANNEL_SETTINGS channelSettings[2] = {
-		{0, PS2000_RANGE::PS2000_200MV, TRUE},
-		{0, PS2000_RANGE::PS2000_500MV, TRUE}
+		{0, PS2000A_RANGE::PS2000A_200MV, TRUE},
+		{0, PS2000A_RANGE::PS2000A_500MV, TRUE}
 	};
 } ACQUISITION_PARAMETERS;
 
@@ -140,7 +140,7 @@ class daq : public QObject {
 		SCAN_DATA getScanData();
 		LOCK_PARAMETERS getLockParameters();
 
-		std::array<QVector<QPointF>, PS2000_MAX_CHANNELS> data;
+		std::array<QVector<QPointF>, PS2000A_MAX_CHANNELS> data;
 		std::array<QVector<QPointF>, static_cast<int>(lockViewPlotTypes::COUNT)> lockDataPlot;
 
 		double currentVoltage = 0;
@@ -153,7 +153,7 @@ class daq : public QObject {
 		void scanDone();
 		void collectedData();
 		void locked(std::array<QVector<QPointF>, static_cast<int>(lockViewPlotTypes::COUNT)> &);
-		void collectedBlockData(std::array<QVector<QPointF>, PS2000_MAX_CHANNELS> &);
+		void collectedBlockData(std::array<QVector<QPointF>, PS2000A_MAX_CHANNELS> &);
 		void acquisitionParametersChanged(ACQUISITION_PARAMETERS);
 		void lockStateChanged(LOCKSTATE);
 		void compensationStateChanged(bool);
@@ -168,7 +168,7 @@ class daq : public QObject {
 			uint32_t  nValues
 		);
 		void setAcquisitionParameters();
-		std::array<std::vector<int32_t>, PS2000_MAX_CHANNELS> collectBlockData();
+		std::array<std::vector<int32_t>, PS2000A_MAX_CHANNELS> collectBlockData();
 		int32_t adc_to_mv(
 			int32_t raw,
 			int32_t ch
