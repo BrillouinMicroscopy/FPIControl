@@ -19,6 +19,7 @@
 #define MAX_CHANNELS 4
 #define SINGLE_CH_SCOPE 1				// Single channel scope
 #define DUAL_SCOPE 2					// Dual channel scope
+#define QUAD_SCOPE 4
 
 typedef struct {
 	PS2000A_COUPLING coupling;
@@ -34,7 +35,7 @@ typedef struct {
 	uint32_t 	no_of_samples = 1000;	// set to a value which allows a clean frequency analysis for 5000 Hz modulation frequency at timebase 10
 	int32_t 	max_samples;
 	int32_t 	time_indisposed_ms;
-	int16_t		timebase = 10;
+	uint32_t	timebase = 514;
 	DEFAULT_CHANNEL_SETTINGS channelSettings[2] = {
 		{PS2000A_DC, PS2000A_RANGE::PS2000A_200MV, TRUE},
 		{PS2000A_DC, PS2000A_RANGE::PS2000A_500MV, TRUE}
@@ -45,7 +46,7 @@ typedef struct {
 	int32_t amplitude = 2e6;		// [µV] peak to peak voltage
 	int32_t offset = 0;				// 
 	int16_t waveform = 3;			// type of waveform
-	int32_t frequency = 100;		// frequency of the scan
+	float frequency = 100;		// frequency of the scan
 	int32_t	nrSteps = 100;			// number of steps for the manual scan
 } SCAN_PARAMETERS;
 
@@ -133,6 +134,7 @@ class daq : public QObject {
 		void setRange(int index, int ch);
 		void setNumberSamples(int32_t no_of_samples);
 		void setScanParameters(int type, int value);
+		void setScanFrequency(float value);
 		void setLockParameters(int type, double value);
 		void toggleOffsetCompensation(bool compensate);
 		void scanManual();
@@ -146,6 +148,24 @@ class daq : public QObject {
 		double currentVoltage = 0;
 		double piezoVoltage = 0;
 		int compensationTimer = 0;
+
+		int sampleRates[13] = {
+			0,
+			1,
+			2,
+			3,
+			4,
+			6,
+			10,
+			18,
+			34,
+			66,
+			130,
+			258,
+			514
+		};
+
+		int16_t * buffers[PS2000A_MAX_CHANNEL_BUFFERS];
 
 	private slots:
 

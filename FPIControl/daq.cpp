@@ -183,7 +183,7 @@ void daq::disableLocking(LOCKSTATE lockstate) {
 		unitOpened.handle,				// handle of the oscilloscope
 		currentVoltage * 1e6,			// offsetVoltage in microvolt
 		0,								// peak to peak voltage in microvolt
-		(PS2000A_WAVE_TYPE)5,			// type of waveform
+		PS2000A_DC_VOLTAGE,				// type of waveform
 		(float)0,						// startFrequency in Hertz
 		(float)0,						// stopFrequency in Hertz
 		0,								// increment
@@ -208,7 +208,7 @@ SCAN_PARAMETERS daq::getScanParameters() {
 }
 
 void daq::setSampleRate(int index) {
-	acquisitionParameters.timebase = index;
+	acquisitionParameters.timebase = sampleRates[index];
 	daq::setAcquisitionParameters();
 }
 
@@ -259,6 +259,10 @@ void daq::setScanParameters(int type, int value) {
 	}
 }
 
+void daq::setScanFrequency(float frequency) {
+	scanParameters.frequency = frequency;
+};
+
 void daq::setLockParameters(int type, double value) {
 	switch (type) {
 		case 0:
@@ -297,33 +301,22 @@ void daq::setAcquisitionParameters() {
 	set_defaults();
 
 	/* Trigger disabled */
-	ps2000aSetSimpleTrigger(
+	PICO_STATUS status = ps2000aSetSimpleTrigger(
 		unitOpened.handle,			// handle
-		0,							// enable
+		NULL,							// enable
 		PS2000A_CHANNEL_A,			// source
-		0,							// threshold
+		NULL,							// threshold
 		PS2000A_NONE,				// direction
-		0,							// delay
-		acquisitionParameters.auto_trigger_ms
+		NULL,							// delay
+		NULL
 	);
 
 	/*  find the maximum number of samples, the time interval (in time_units),
 	*		 the most suitable time units, and the maximum oversample at the current timebase
 	*/
 	acquisitionParameters.oversample = 1;
-	//while (!ps2000_get_timebase(
-	//	unitOpened.handle,
-	//	acquisitionParameters.timebase,
-	//	acquisitionParameters.no_of_samples,
-	//	&acquisitionParameters.time_interval,
-	//	&acquisitionParameters.time_units,
-	//	acquisitionParameters.oversample,
-	//	&acquisitionParameters.max_samples)
-	//	) {
-	//	acquisitionParameters.timebase++;
-	//};
 
-	while (!ps2000aGetTimebase (
+	while (ps2000aGetTimebase (
 		unitOpened.handle,
 		acquisitionParameters.timebase,
 		acquisitionParameters.no_of_samples,
@@ -344,7 +337,7 @@ std::array<std::vector<int32_t>, PS2000A_MAX_CHANNELS> daq::collectBlockData() {
 
 	/* Start collecting data,
 	*  wait for completion */
-	ps2000aRunBlock(
+	PICO_STATUS status = ps2000aRunBlock(
 		unitOpened.handle,						// handle
 		0,										// noOfPreTriggerSamples
 		acquisitionParameters.no_of_samples,	// noOfPostTriggerSamples
@@ -356,33 +349,47 @@ std::array<std::vector<int32_t>, PS2000A_MAX_CHANNELS> daq::collectBlockData() {
 		NULL									// * pParameter
 	);
 
-	short * ready;
-	ps2000aIsReady(unitOpened.handle, ready);
+	int16_t ready = 0;
+	ps2000aIsReady(unitOpened.handle, &ready);
 	while (!ready) {
 		Sleep(10);
-		ps2000aIsReady(unitOpened.handle, ready);
+		ps2000aIsReady(unitOpened.handle, &ready);
 	}
 
-	for (int16_t ch(0); ch < 2; ch++) {
-		ps2000aSetDataBuffer(
+	for (int16_t ch(0); ch < 4; ch++) {
+
+		/*buffers[ch * 2] = (int16_t*)malloc(BUFFER_SIZE * sizeof(int16_t));
+		buffers[ch * 2 + 1] = (int16_t*)malloc(BUFFER_SIZE * sizeof(int16_t));*/
+		status = ps2000aSetDataBuffers(
 			unitOpened.handle,
-			PS2000A_CHANNEL(ch),
-			unitOpened.channelSettings[PS2000A_CHANNEL_A].values,
+			(int16_t) ch,
+			buffers[ch * 2],
+			buffers[ch * 2 + 1],
 			BUFFER_SIZE,
 			0,
 			PS2000A_RATIO_MODE_NONE
 		);
+
+
+		//status = ps2000aSetDataBuffer(
+		//	unitOpened.handle,
+		//	PS2000A_CHANNEL(ch),
+		//	unitOpened.channelSettings[PS2000A_CHANNEL_A].values,
+		//	BUFFER_SIZE,
+		//	0,
+		//	PS2000A_RATIO_MODE_NONE
+		//);
 	}
 
-	short *overflow;
-	ps2000aGetValues(
+	//short *overflow;
+	status = ps2000aGetValues(
 		unitOpened.handle,
 		0,
 		&acquisitionParameters.no_of_samples,
 		NULL,
 		PS2000A_RATIO_MODE_NONE,
 		0,
-		overflow
+		NULL
 	);
 
 	ps2000aStop(unitOpened.handle);
@@ -392,7 +399,7 @@ std::array<std::vector<int32_t>, PS2000A_MAX_CHANNELS> daq::collectBlockData() {
 	for (int i(0); i < acquisitionParameters.no_of_samples; i++) {
 		for (int ch(0); ch < unitOpened.noOfChannels; ch++) {
 			if (unitOpened.channelSettings[ch].enabled) {
-				values[ch].push_back(adc_to_mv(unitOpened.channelSettings[ch].values[i], unitOpened.channelSettings[ch].range));
+				values[ch].push_back(adc_to_mv(buffers[ch * 2][i], unitOpened.channelSettings[ch].range));
 			}
 		}
 	}
@@ -417,7 +424,7 @@ void daq::scanManual() {
 			unitOpened.handle,		// handle of the oscilloscope
 			scanData.voltages[j],	// offsetVoltage in microvolt
 			0,						// peak to peak voltage in microvolt
-			(PS2000A_WAVE_TYPE)0,	// type of waveform
+			PS2000A_DC_VOLTAGE,		// type of waveform
 			(float)0,				// startFrequency in Hertz
 			(float)0,				// stopFrequency in Hertz
 			0,						// increment
@@ -569,7 +576,7 @@ void daq::lock() {
 			unitOpened.handle,		// handle of the oscilloscope
 			currentVoltage * 1e6,	// offsetVoltage in microvolt
 			0,						// peak to peak voltage in microvolt
-			(PS2000A_WAVE_TYPE)5,	// type of waveform
+			PS2000A_DC_VOLTAGE,		// type of waveform
 			(float)0,				// startFrequency in Hertz
 			(float)0,				// stopFrequency in Hertz
 			0,						// increment
@@ -778,7 +785,7 @@ int16_t daq::mv_to_adc(int16_t mv, int16_t ch) {
 void daq::set_defaults(void) {
 	int16_t ch = 0;
 
-	ps2000aSetEts(
+	PICO_STATUS status = ps2000aSetEts(
 		unitOpened.handle,
 		PS2000A_ETS_OFF,
 		0,
@@ -787,7 +794,7 @@ void daq::set_defaults(void) {
 	);
 
 	for (ch = 0; ch < unitOpened.noOfChannels; ch++) {
-		ps2000aSetChannel(
+		PICO_STATUS status = ps2000aSetChannel(
 			unitOpened.handle,
 			PS2000A_CHANNEL(ch),
 			unitOpened.channelSettings[ch].enabled,
@@ -878,6 +885,13 @@ bool daq::connect() {
 			return false;
 		} else {
 			daq::setAcquisitionParameters();
+
+			for (int16_t ch(0); ch < 4; ch++) {
+
+				buffers[ch * 2] = (int16_t*)malloc(BUFFER_SIZE * sizeof(int16_t));
+				buffers[ch * 2 + 1] = (int16_t*)malloc(BUFFER_SIZE * sizeof(int16_t));
+			};
+
 			return true;
 		}
 	} else {
@@ -915,16 +929,16 @@ void daq::get_info(void) {
 		"Kernel Driver    " 
 	};
 	
-	int8_t	line[80];
+	char line[80];
 	int32_t	variant;
-	short *requiredSize;
+	int16_t requiredSize = 0;
 
 	if (unitOpened.handle) {
 		ps2000aGetUnitInfo(
 			unitOpened.handle,
-			line,
+			(int8_t *)line,
 			sizeof(line),
-			requiredSize,
+			&requiredSize,
 			PICO_VARIANT_INFO
 		);
 
@@ -1043,7 +1057,7 @@ void daq::get_info(void) {
 				unitOpened.lastRange = PS2000A_20V;
 	/*			unitOpened.maxTimebase = PS2000A_MAX_TIMEBASE;
 				unitOpened.timebases = unitOpened.maxTimebase;*/
-				unitOpened.noOfChannels = DUAL_SCOPE;
+				unitOpened.noOfChannels = QUAD_SCOPE;
 				unitOpened.hasAdvancedTriggering = TRUE;
 				unitOpened.hasSignalGenerator = TRUE;
 				unitOpened.hasEts = TRUE;
