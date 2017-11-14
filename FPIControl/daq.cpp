@@ -8,23 +8,7 @@
 /* Definitions of PS2000 driver routines */
 #include "ps2000aApi.h"
 
-int16_t		values_a[BUFFER_SIZE]; // block mode buffer, Channel A
-int16_t		values_b[BUFFER_SIZE]; // block mode buffer, Channel B
-
-int16_t		overflow;
 int32_t		scale_to_mv = 1;
-
-int16_t		channel_mv[PS2000A_MAX_CHANNELS];
-
-int16_t		g_overflow = 0;
-
-// Streaming data parameters
-int16_t		g_triggered = 0;
-uint32_t	g_triggeredAt = 0;
-uint32_t	g_nValues;
-uint32_t	g_startIndex;			// Start index in application buffer where data should be written to in streaming mode collection
-uint32_t	g_prevStartIndex;		// Keep track of previous index into application buffer in streaming mode collection
-int16_t		g_appBufferFull = 0;	// Use this in the callback to indicate if it is going to copy past the end of the buffer
 
 typedef enum {
 	MODEL_NONE = 0,
@@ -105,17 +89,7 @@ typedef struct {
 	int16_t			bufferSize;
 } UNIT_MODEL;
 
-// Struct to help with retrieving data into 
-// application buffers in streaming data capture
-typedef struct {
-	UNIT_MODEL unit;
-	int16_t *appBuffers[DUAL_SCOPE * 2];
-	uint32_t bufferSizes[PS2000A_MAX_CHANNELS];
-} BUFFER_INFO;
-
 UNIT_MODEL unitOpened;
-
-BUFFER_INFO bufferInfo;
 
 int32_t input_ranges[PS2000A_MAX_RANGES] = { 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000 };
 
