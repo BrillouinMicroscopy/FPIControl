@@ -453,7 +453,15 @@ void MainWindow::updateScanView() {
 
 void MainWindow::updateAcquisitionParameters(ACQUISITION_PARAMETERS acquisitionParameters) {
 	// set sample rate
-	ui->sampleRate->setCurrentIndex(acquisitionParameters.timebase);
+	// find index of corresponding timebase value
+	int timebaseIndex = 0;
+	for (int i(0); i < d.sampleRates.size(); i++) {
+		if (d.sampleRates[i] == acquisitionParameters.timebase) {
+			timebaseIndex = i;
+			break;
+		}
+	}
+	ui->sampleRate->setCurrentIndex(timebaseIndex);
 	// set number of samples
 	ui->sampleNumber->setValue(acquisitionParameters.no_of_samples);
 	// set range

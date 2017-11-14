@@ -149,21 +149,7 @@ class daq : public QObject {
 		double piezoVoltage = 0;
 		int compensationTimer = 0;
 
-		int sampleRates[13] = {
-			0,
-			1,
-			2,
-			3,
-			4,
-			6,
-			10,
-			18,
-			34,
-			66,
-			130,
-			258,
-			514
-		};
+		const std::vector<int> sampleRates = { 0, 1, 2, 3, 4, 6, 10, 18, 34, 66, 130, 258, 514 };
 
 		int16_t * buffers[PS2000A_MAX_CHANNEL_BUFFERS];
 
