@@ -146,7 +146,7 @@ class daq : public QObject {
 
 		const std::vector<int> sampleRates = { 0, 1, 2, 3, 4, 6, 10, 18, 34, 66, 130, 258, 514 };
 
-		int16_t * buffers[PS2000A_MAX_CHANNEL_BUFFERS];
+		int16_t buffers[PS2000A_MAX_CHANNEL_BUFFERS][BUFFER_SIZE * sizeof(int16_t)];
 
 	private slots:
 
