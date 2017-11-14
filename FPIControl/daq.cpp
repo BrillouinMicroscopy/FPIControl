@@ -228,7 +228,6 @@ void daq::setRange(int index, int ch) {
 		acquisitionParameters.channelSettings[ch].enabled = TRUE;
 		unitOpened.channelSettings[ch].enabled = TRUE;
 		acquisitionParameters.channelSettings[ch].range = PS2000A_RANGE(index);
-		PS2000A_RANGE;
 		unitOpened.channelSettings[ch].range = PS2000A_RANGE(index);
 	} else if (index == 9) {
 		// set auto range
@@ -301,13 +300,13 @@ void daq::setAcquisitionParameters() {
 	set_defaults();
 
 	/* Trigger disabled */
-	PICO_STATUS status = ps2000aSetSimpleTrigger(
-		unitOpened.handle,			// handle
-		NULL,							// enable
-		PS2000A_CHANNEL_A,			// source
-		NULL,							// threshold
-		PS2000A_NONE,				// direction
-		NULL,							// delay
+	ps2000aSetSimpleTrigger(
+		unitOpened.handle,		// handle
+		NULL,					// enable
+		PS2000A_CHANNEL_A,		// source
+		NULL,					// threshold
+		PS2000A_NONE,			// direction
+		NULL,					// delay
 		NULL
 	);
 
@@ -333,11 +332,9 @@ void daq::setAcquisitionParameters() {
 
 std::array<std::vector<int32_t>, PS2000A_MAX_CHANNELS> daq::collectBlockData() {
 
-	int32_t times[BUFFER_SIZE];
-
 	/* Start collecting data,
 	*  wait for completion */
-	PICO_STATUS status = ps2000aRunBlock(
+	ps2000aRunBlock(
 		unitOpened.handle,						// handle
 		0,										// noOfPreTriggerSamples
 		acquisitionParameters.no_of_samples,	// noOfPostTriggerSamples
@@ -357,10 +354,7 @@ std::array<std::vector<int32_t>, PS2000A_MAX_CHANNELS> daq::collectBlockData() {
 	}
 
 	for (int16_t ch(0); ch < 4; ch++) {
-
-		/*buffers[ch * 2] = (int16_t*)malloc(BUFFER_SIZE * sizeof(int16_t));
-		buffers[ch * 2 + 1] = (int16_t*)malloc(BUFFER_SIZE * sizeof(int16_t));*/
-		status = ps2000aSetDataBuffers(
+		ps2000aSetDataBuffers(
 			unitOpened.handle,
 			(int16_t) ch,
 			buffers[ch * 2],
@@ -369,20 +363,9 @@ std::array<std::vector<int32_t>, PS2000A_MAX_CHANNELS> daq::collectBlockData() {
 			0,
 			PS2000A_RATIO_MODE_NONE
 		);
-
-
-		//status = ps2000aSetDataBuffer(
-		//	unitOpened.handle,
-		//	PS2000A_CHANNEL(ch),
-		//	unitOpened.channelSettings[PS2000A_CHANNEL_A].values,
-		//	BUFFER_SIZE,
-		//	0,
-		//	PS2000A_RATIO_MODE_NONE
-		//);
 	}
 
-	//short *overflow;
-	status = ps2000aGetValues(
+	ps2000aGetValues(
 		unitOpened.handle,
 		0,
 		&acquisitionParameters.no_of_samples,
@@ -396,7 +379,7 @@ std::array<std::vector<int32_t>, PS2000A_MAX_CHANNELS> daq::collectBlockData() {
 
 	// create vector of voltage values
 	std::array<std::vector<int32_t>, PS2000A_MAX_CHANNELS> values;
-	for (int i(0); i < acquisitionParameters.no_of_samples; i++) {
+	for (int32_t i(0); i < static_cast<int32_t>(acquisitionParameters.no_of_samples); i++) {
 		for (int ch(0); ch < unitOpened.noOfChannels; ch++) {
 			if (unitOpened.channelSettings[ch].enabled) {
 				values[ch].push_back(adc_to_mv(buffers[ch * 2][i], unitOpened.channelSettings[ch].range));
@@ -627,137 +610,6 @@ void daq::decrementPiezoVoltage() {
 	piezo.incrementVoltage(-1);
 }
 
-QVector<QPointF> daq::getStreamingBuffer(int ch) {
-	QVector<QPointF> data;
-	//data.reserve(unitOpened.trigger.advanced.totalSamples);
-	data.reserve(50000);
-	double voltage;
-
-	for (int j = 0; j < 50000; j++) {
-	//for (uint32_t j = 0; j < unitOpened.trigger.advanced.totalSamples; j++) {
-		//voltage = adc_to_mv(bufferInfo.appBuffers[ch * 2][j], unitOpened.channelSettings[ch].range) / static_cast<double>(1000) + (qreal)rand() / (qreal)RAND_MAX;
-		voltage = adc_to_mv(bufferInfo.appBuffers[ch * 2][j], unitOpened.channelSettings[ch].range) / static_cast<double>(1000);
-		data.append(QPointF(j, voltage));
-	}
-
-	return data;
-}
-
-/****************************************************************************
-* startStreaming
-*
-* Starts the streaming of data
-****************************************************************************/
-void daq::startStreaming(void) {
-	////uint32_t	i;
-	////FILE 		*fp;
-	//int32_t 	ok;
-	////int16_t		ch;
-	////uint32_t	nPreviousValues = 0;
-	////double		startTime = 0.0;
-	//uint32_t	appBufferSize = (int)(50000);
-	////uint32_t	overviewBufferSize = BUFFER_SIZE_STREAMING;
-	////uint32_t	sample_count;
-
-	//set_defaults();
-
-	//// Simple trigger, 500mV, rising
-	//ok = ps2000_set_trigger(
-	//	unitOpened.handle,														// handle of the oscilloscope
-	//	PS2000A_CHANNEL_A,														// source where to look for a trigger
-	//	mv_to_adc(0, unitOpened.channelSettings[PS2000A_CHANNEL_A].range),		// trigger threshold
-	//	PS2000A_RISING,															// direction, rising or falling
-	//	0,																		// delay
-	//	0																		// the delay in ms
-	//);
-
-	//unitOpened.trigger.advanced.autoStop = 0;
-	//unitOpened.trigger.advanced.totalSamples = 0;
-	//unitOpened.trigger.advanced.triggered = 0;
-
-	////Reset global values
-	//g_nValues = 0;
-	//g_triggered = 0;
-	//g_triggeredAt = 0;
-	//g_startIndex = 0;
-	//g_prevStartIndex = 0;
-	//g_appBufferFull = 0;
-
-	//bufferInfo.unit = unitOpened;
-
-	//// Allocate memory for data arrays
-
-	//// Max A buffer at index 0, min buffer at index 1
-	//bufferInfo.appBuffers[PS2000A_CHANNEL_A * 2] = (int16_t *)calloc(appBufferSize, sizeof(int16_t));
-	//bufferInfo.bufferSizes[PS2000A_CHANNEL_A * 2] = appBufferSize;
-
-	//if (unitOpened.channelSettings[PS2000A_CHANNEL_B].enabled) {
-	//	// Max B buffer at index 2, min buffer at index 3
-	//	bufferInfo.appBuffers[PS2000A_CHANNEL_B * 2] = (int16_t *)calloc(appBufferSize, sizeof(int16_t));
-	//	bufferInfo.bufferSizes[PS2000A_CHANNEL_B * 2] = appBufferSize;
-	//}
-
-	///* Collect data at 1us intervals
-	//* 1000000 points after trigger with 0 aggregation
-	//* Auto stop after the 1000000 samples
-	//* Start it collecting,
-	//* NOTE: The actual sampling interval used by the driver might not be that which is specified below. Use the sampling intervals
-	//* returned by the ps2000_get_timebase function to work out the most appropriate sampling interval to use. As these are low memory
-	//* devices, the fastest sampling intervals may result in lost data.
-	//*/
-	//ok = ps2000_run_streaming_ns(
-	//	unitOpened.handle,		// handle, handle of the oscilloscope
-	//	2,						// sample_interval, sample interval in time_units
-	//	PS2000A_US,				// time_units, units in which sample_interval is measured
-	//	NUM_STREAMING_SAMPLES,	// max_samples, maximum number of samples
-	//	0,						// auto_stop, boolean to indicate if streaming should stop when max_samples is reached
-	//	1,						// noOfSamplesPerAggregate, number of samples the driver will merge
-	//	50000		// size of the overview buffer
-	//);
-	///* From here on, we can get data whenever we want...*/
-}
-
-void daq::collectStreamingData() {
-
-	//unitOpened.trigger.advanced.autoStop = 0;
-	//unitOpened.trigger.advanced.totalSamples = 0;
-	//unitOpened.trigger.advanced.triggered = 0;
-
-	////Reset global values
-	//g_nValues = 0;
-	//g_triggered = 0;
-	//g_triggeredAt = 0;
-	//g_startIndex = 0;
-	//g_prevStartIndex = 0;
-	//g_appBufferFull = 0;
-
-	//while (!unitOpened.trigger.advanced.autoStop && !g_appBufferFull) {
-	//	ps2000_get_streaming_last_values(
-	//		unitOpened.handle,				// handle, handle of the oscilloscope
-	//		&daq::ps2000FastStreamingReady2 // pointer to callback function to receive data
-	//	);
-	//}
-
-	//emit collectedData();
-}
-
-/****************************************************************************
-* stopStreaming
-*
-* Stops the streaming of data
-****************************************************************************/
-void daq::stopStreaming() {
-	//int16_t		ch;
-	//ps2000_stop(unitOpened.handle);
-	//
-	//// Free buffers
-	//for (ch = 0; ch < unitOpened.noOfChannels; ch++) {
-	//	if (unitOpened.channelSettings[ch].enabled) {
-	//		free(bufferInfo.appBuffers[ch * 2]);
-	//	}
-	//}
-}
-
 /****************************************************************************
 * adc_to_mv
 *
@@ -785,7 +637,7 @@ int16_t daq::mv_to_adc(int16_t mv, int16_t ch) {
 void daq::set_defaults(void) {
 	int16_t ch = 0;
 
-	PICO_STATUS status = ps2000aSetEts(
+	ps2000aSetEts(
 		unitOpened.handle,
 		PS2000A_ETS_OFF,
 		0,
@@ -794,7 +646,7 @@ void daq::set_defaults(void) {
 	);
 
 	for (ch = 0; ch < unitOpened.noOfChannels; ch++) {
-		PICO_STATUS status = ps2000aSetChannel(
+		ps2000aSetChannel(
 			unitOpened.handle,
 			PS2000A_CHANNEL(ch),
 			unitOpened.channelSettings[ch].enabled,
@@ -805,79 +657,9 @@ void daq::set_defaults(void) {
 	}
 }
 
-/****************************************************************************
-*
-* Streaming callback
-*
-* This demonstrates how to copy data to application buffers
-*
-****************************************************************************/
-void  __stdcall daq::ps2000FastStreamingReady2(
-	int16_t	**overviewBuffers,
-	int16_t		overflow,
-	uint32_t	triggeredAt,
-	int16_t		triggered,
-	int16_t		auto_stop,
-	uint32_t	nValues
-) {
-
-	int16_t channel = 0;
-
-	unitOpened.trigger.advanced.totalSamples += nValues;
-	unitOpened.trigger.advanced.autoStop = auto_stop;
-
-	g_triggered = triggered;
-	g_triggeredAt = triggeredAt;
-
-	g_overflow = overflow;
-
-	if (nValues > 0 && g_appBufferFull == 0) {
-		for (channel = (int16_t)PS2000A_CHANNEL_A; channel < DUAL_SCOPE; channel++) {
-			if (bufferInfo.unit.channelSettings[channel].enabled) {
-				if (unitOpened.trigger.advanced.totalSamples <= bufferInfo.bufferSizes[channel * 2] && !g_appBufferFull) {
-					g_nValues = nValues;
-				} else if (g_startIndex < bufferInfo.bufferSizes[channel * 2]) {
-					g_nValues = bufferInfo.bufferSizes[channel * 2] - (g_startIndex + 1);			// Only copy data into application buffer up to end
-					unitOpened.trigger.advanced.totalSamples = bufferInfo.bufferSizes[channel * 2];	// Total samples limited to application buffer
-					g_appBufferFull = 1;
-				} else {
-					// g_startIndex might be >= buffer length
-					g_nValues = 0;
-					unitOpened.trigger.advanced.totalSamples = bufferInfo.bufferSizes[channel * 2];
-					g_appBufferFull = 1;
-				}
-
-				// Copy data...
-
-				// Max buffers
-				if (overviewBuffers[channel * 2] && bufferInfo.appBuffers[channel * 2]) {
-					memcpy_s(
-						(void *)(bufferInfo.appBuffers[channel * 2] + g_startIndex),
-						g_nValues * sizeof(int16_t),
-						(void *)(overviewBuffers[channel * 2]),
-						g_nValues * sizeof(int16_t)
-					);
-				}
-
-				// Min buffers
-				if (overviewBuffers[channel * 2 + 1] && bufferInfo.appBuffers[channel * 2 + 1]) {
-					memcpy_s(
-						(void *)(bufferInfo.appBuffers[channel * 2 + 1] + g_startIndex),
-						g_nValues * sizeof(int16_t),
-						(void *)(overviewBuffers[channel * 2 + 1]), g_nValues * sizeof(int16_t)
-					);
-				}
-			}
-		}
-
-		g_prevStartIndex = g_startIndex;
-		g_startIndex = unitOpened.trigger.advanced.totalSamples;
-	}
-}
-
 bool daq::connect() {
 	if (!unitOpened.handle) {
-		PICO_STATUS status = ps2000aOpenUnit(&unitOpened.handle, NULL);
+		ps2000aOpenUnit(&unitOpened.handle, NULL);
 		
 		get_info();
 
@@ -956,107 +738,10 @@ void daq::get_info(void) {
 
 
 		switch (variant) {
-			//case MODEL_PS2104:
-			//	unitOpened.model = MODEL_PS2104;
-			//	unitOpened.firstRange = PS2000_100MV;
-			//	unitOpened.lastRange = PS2000_20V;
-			//	unitOpened.maxTimebase = PS2104_MAX_TIMEBASE;
-			//	unitOpened.timebases = unitOpened.maxTimebase;
-			//	unitOpened.noOfChannels = 1;
-			//	unitOpened.hasAdvancedTriggering = FALSE;
-			//	unitOpened.hasSignalGenerator = FALSE;
-			//	unitOpened.hasEts = TRUE;
-			//	unitOpened.hasFastStreaming = FALSE;
-			//	break;
-
-			//case MODEL_PS2105:
-			//	unitOpened.model = MODEL_PS2105;
-			//	unitOpened.firstRange = PS2000_100MV;
-			//	unitOpened.lastRange = PS2000_20V;
-			//	unitOpened.maxTimebase = PS2105_MAX_TIMEBASE;
-			//	unitOpened.timebases = unitOpened.maxTimebase;
-			//	unitOpened.noOfChannels = 1;
-			//	unitOpened.hasAdvancedTriggering = FALSE;
-			//	unitOpened.hasSignalGenerator = FALSE;
-			//	unitOpened.hasEts = TRUE;
-			//	unitOpened.hasFastStreaming = FALSE;
-			//	break;
-
-			//case MODEL_PS2202:
-			//	unitOpened.model = MODEL_PS2202;
-			//	unitOpened.firstRange = PS2000_100MV;
-			//	unitOpened.lastRange = PS2000_20V;
-			//	unitOpened.maxTimebase = PS2200_MAX_TIMEBASE;
-			//	unitOpened.timebases = unitOpened.maxTimebase;
-			//	unitOpened.noOfChannels = 2;
-			//	unitOpened.hasAdvancedTriggering = FALSE;
-			//	unitOpened.hasSignalGenerator = FALSE;
-			//	unitOpened.hasEts = FALSE;
-			//	unitOpened.hasFastStreaming = FALSE;
-			//	break;
-
-			//case MODEL_PS2203:
-			//	unitOpened.model = MODEL_PS2203;
-			//	unitOpened.firstRange = PS2000_50MV;
-			//	unitOpened.lastRange = PS2000_20V;
-			//	unitOpened.maxTimebase = PS2000_MAX_TIMEBASE;
-			//	unitOpened.timebases = unitOpened.maxTimebase;
-			//	unitOpened.noOfChannels = 2;
-			//	unitOpened.hasAdvancedTriggering = TRUE;
-			//	unitOpened.hasSignalGenerator = TRUE;
-			//	unitOpened.hasEts = TRUE;
-			//	unitOpened.hasFastStreaming = TRUE;
-			//	break;
-
-			//case MODEL_PS2204:
-			//	unitOpened.model = MODEL_PS2204;
-			//	unitOpened.firstRange = PS2000_50MV;
-			//	unitOpened.lastRange = PS2000_20V;
-			//	unitOpened.maxTimebase = PS2000_MAX_TIMEBASE;
-			//	unitOpened.timebases = unitOpened.maxTimebase;
-			//	unitOpened.noOfChannels = 2;
-			//	unitOpened.hasAdvancedTriggering = TRUE;
-			//	unitOpened.hasSignalGenerator = TRUE;
-			//	unitOpened.hasEts = TRUE;
-			//	unitOpened.hasFastStreaming = TRUE;
-			//	unitOpened.bufferSize = 8000;
-			//	break;
-
-			//case MODEL_PS2204A:
-			//	unitOpened.model = MODEL_PS2204A;
-			//	unitOpened.firstRange = PS2000_50MV;
-			//	unitOpened.lastRange = PS2000_20V;
-			//	unitOpened.maxTimebase = PS2000_MAX_TIMEBASE;
-			//	unitOpened.timebases = unitOpened.maxTimebase;
-			//	unitOpened.noOfChannels = DUAL_SCOPE;
-			//	unitOpened.hasAdvancedTriggering = TRUE;
-			//	unitOpened.hasSignalGenerator = TRUE;
-			//	unitOpened.hasEts = TRUE;
-			//	unitOpened.hasFastStreaming = TRUE;
-			//	unitOpened.awgBufferSize = 4096;
-			//	unitOpened.bufferSize = 8000;
-			//	break;
-
-			//case MODEL_PS2205:
-			//	unitOpened.model = MODEL_PS2205;
-			//	unitOpened.firstRange = PS2000_50MV;
-			//	unitOpened.lastRange = PS2000_20V;
-			//	unitOpened.maxTimebase = PS2000_MAX_TIMEBASE;
-			//	unitOpened.timebases = unitOpened.maxTimebase;
-			//	unitOpened.noOfChannels = 2;
-			//	unitOpened.hasAdvancedTriggering = TRUE;
-			//	unitOpened.hasSignalGenerator = TRUE;
-			//	unitOpened.hasEts = TRUE;
-			//	unitOpened.hasFastStreaming = TRUE;
-			//	unitOpened.bufferSize = 16000;
-			//	break;
-
 			case MODEL_PS2405A:
 				unitOpened.model = MODEL_PS2405A;
 				unitOpened.firstRange = PS2000A_50MV;
 				unitOpened.lastRange = PS2000A_20V;
-	/*			unitOpened.maxTimebase = PS2000A_MAX_TIMEBASE;
-				unitOpened.timebases = unitOpened.maxTimebase;*/
 				unitOpened.noOfChannels = QUAD_SCOPE;
 				unitOpened.hasAdvancedTriggering = TRUE;
 				unitOpened.hasSignalGenerator = TRUE;
@@ -1121,83 +806,4 @@ void daq::set_sig_gen() {
 		0
 	);
 
-}
-
-void daq::set_trigger_advanced(void) {
-	//int16_t ok = 0;
-	//int16_t auto_trigger_ms = 0;
-
-	//// to trigger of more than one channel set this parameter to 2 or more
-	//// each condition can only have on parameter set to PS2000_CONDITION_TRUE or PS2000_CONDITION_FALSE
-	//// if more than on condition is set then it will trigger off condition one, or condition two etc.
-	//unitOpened.trigger.advanced.nProperties = 1;
-	//// set the trigger channel to channel A by using PS2000_CONDITION_TRUE
-	//unitOpened.trigger.advanced.conditions = (PS2000A_TRIGGER_CONDITIONS*)malloc(sizeof(PS2000A_TRIGGER_CONDITIONS) * unitOpened.trigger.advanced.nProperties);
-	//unitOpened.trigger.advanced.conditions->channelA = PS2000A_CONDITION_TRUE;
-	//unitOpened.trigger.advanced.conditions->channelB = PS2000A_CONDITION_DONT_CARE;
-	//unitOpened.trigger.advanced.conditions->channelC = PS2000A_CONDITION_DONT_CARE;
-	//unitOpened.trigger.advanced.conditions->channelD = PS2000A_CONDITION_DONT_CARE;
-	//unitOpened.trigger.advanced.conditions->external = PS2000A_CONDITION_DONT_CARE;
-	//unitOpened.trigger.advanced.conditions->pulseWidthQualifier = PS2000A_CONDITION_DONT_CARE;
-
-	//// set channel A to rising
-	//// the remainder will be ignored as only a condition is set for channel A
-	//unitOpened.trigger.advanced.directions.channelA = PS2000A_ADV_RISING;
-	//unitOpened.trigger.advanced.directions.channelB = PS2000A_ADV_RISING;
-	//unitOpened.trigger.advanced.directions.channelC = PS2000A_ADV_RISING;
-	//unitOpened.trigger.advanced.directions.channelD = PS2000A_ADV_RISING;
-	//unitOpened.trigger.advanced.directions.ext = PS2000A_ADV_RISING;
-
-
-	//unitOpened.trigger.advanced.channelProperties = (PS2000_TRIGGER_CHANNEL_PROPERTIES*)malloc(sizeof(PS2000_TRIGGER_CHANNEL_PROPERTIES) * unitOpened.trigger.advanced.nProperties);
-	//// there is one property for each condition
-	//// set channel A
-	//// trigger level 1500 adc counts the trigger point will vary depending on the voltage range
-	//// hysterisis 4096 adc counts  
-	//unitOpened.trigger.advanced.channelProperties->channel = (int16_t)PS2000A_CHANNEL_A;
-	//unitOpened.trigger.advanced.channelProperties->thresholdMajor = 1500;
-	//// not used in level triggering, should be set when in window mode
-	//unitOpened.trigger.advanced.channelProperties->thresholdMinor = 0;
-	//// used in level triggering, not used when in window mode
-	//unitOpened.trigger.advanced.channelProperties->hysteresis = (int16_t)4096;
-	//unitOpened.trigger.advanced.channelProperties->thresholdMode = PS2000_LEVEL;
-
-	//ok = ps2000SetAdvTriggerChannelConditions(unitOpened.handle, unitOpened.trigger.advanced.conditions, unitOpened.trigger.advanced.nProperties);
-
-	//ok = ps2000SetAdvTriggerChannelDirections(unitOpened.handle,
-	//	unitOpened.trigger.advanced.directions.channelA,
-	//	unitOpened.trigger.advanced.directions.channelB,
-	//	unitOpened.trigger.advanced.directions.channelC,
-	//	unitOpened.trigger.advanced.directions.channelD,
-	//	unitOpened.trigger.advanced.directions.ext);
-
-	//ok = ps2000SetAdvTriggerChannelProperties(unitOpened.handle,
-	//	unitOpened.trigger.advanced.channelProperties,
-	//	unitOpened.trigger.advanced.nProperties,
-	//	auto_trigger_ms);
-
-	//// remove comments to try triggering with a pulse width qualifier
-	//// add a condition for the pulse width eg. in addition to the channel A or as a replacement
-	////unitOpened.trigger.advanced.pwq.conditions = malloc (sizeof (PS2000_PWQ_CONDITIONS));
-	////unitOpened.trigger.advanced.pwq.conditions->channelA = PS2000_CONDITION_TRUE;
-	////unitOpened.trigger.advanced.pwq.conditions->channelB = PS2000_CONDITION_DONT_CARE;
-	////unitOpened.trigger.advanced.pwq.conditions->channelC = PS2000_CONDITION_DONT_CARE;
-	////unitOpened.trigger.advanced.pwq.conditions->channelD = PS2000_CONDITION_DONT_CARE;
-	////unitOpened.trigger.advanced.pwq.conditions->external = PS2000_CONDITION_DONT_CARE;
-	////unitOpened.trigger.advanced.pwq.nConditions = 1;
-
-	////unitOpened.trigger.advanced.pwq.direction = PS2000_RISING;
-	////unitOpened.trigger.advanced.pwq.type = PS2000_PW_TYPE_LESS_THAN;
-	////// used when type	PS2000_PW_TYPE_IN_RANGE,	PS2000_PW_TYPE_OUT_OF_RANGE
-	////unitOpened.trigger.advanced.pwq.lower = 0;
-	////unitOpened.trigger.advanced.pwq.upper = 10000;
-	////ps2000SetPulseWidthQualifier (unitOpened.handle,
-	////															unitOpened.trigger.advanced.pwq.conditions,
-	////															unitOpened.trigger.advanced.pwq.nConditions, 
-	////															unitOpened.trigger.advanced.pwq.direction,
-	////															unitOpened.trigger.advanced.pwq.lower,
-	////															unitOpened.trigger.advanced.pwq.upper,
-	////															unitOpened.trigger.advanced.pwq.type);
-
-	//ok = ps2000SetAdvTriggerDelay(unitOpened.handle, 0, -10);
 }

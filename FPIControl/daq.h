@@ -119,16 +119,11 @@ class daq : public QObject {
 		bool disablePiezo();
 		void incrementPiezoVoltage();
 		void decrementPiezoVoltage();
-		QVector<QPointF> getStreamingBuffer(int ch);
 		bool connect();
 		bool disconnect();
 		bool connectPiezo();
 		bool disconnectPiezo();
-		void startStreaming();
-		void collectStreamingData();
-		void stopStreaming();
 		void set_sig_gen();
-		void set_trigger_advanced();
 		void setSampleRate(int index);
 		void setCoupling(int index, int ch);
 		void setRange(int index, int ch);
@@ -165,14 +160,6 @@ class daq : public QObject {
 		void compensationStateChanged(bool);
 
 	private:
-		static void __stdcall ps2000FastStreamingReady2(
-			int16_t **overviewBuffers,
-			int16_t   overflow,
-			uint32_t  triggeredAt,
-			int16_t   triggered,
-			int16_t   auto_stop,
-			uint32_t  nValues
-		);
 		void setAcquisitionParameters();
 		std::array<std::vector<int32_t>, PS2000A_MAX_CHANNELS> collectBlockData();
 		int32_t adc_to_mv(
