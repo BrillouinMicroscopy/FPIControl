@@ -1,6 +1,5 @@
 #include "daq.h"
 #include "kcubepiezo.h"
-#include "FPI.h"
 #include "PDH.h"
 #include <QtWidgets>
 #include <QtWidgets/QApplication>
@@ -119,7 +118,6 @@ BUFFER_INFO bufferInfo;
 
 int32_t input_ranges[PS2000_MAX_RANGES] = { 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000 };
 
-FPI fpi;
 PDH pdh;
 kcubepiezo piezo;
 
@@ -367,8 +365,6 @@ void daq::scanManual() {
 	scanData.error.resize(scanParameters.nrSteps);
 
 	daq::setAcquisitionParameters();
-
-	std::vector<double> frequencies = fpi.getFrequencies(acquisitionParameters);
 
 	// generate voltage values
 	for (int j(0); j < scanData.nrSteps; j++) {

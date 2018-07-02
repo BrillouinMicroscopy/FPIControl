@@ -254,7 +254,6 @@ copy "$(ProjectDir)assets\loader.gif" "$(TargetDir)"</Command>
       </Command>
     </CustomBuild>
     <ClInclude Include="PDH.h" />
-    <ClInclude Include="FPI.h" />
     <ClInclude Include="GeneratedFiles\ui_mainwindow.h" />
     <ClInclude Include="generalmath.h" />
   </ItemGroup>
