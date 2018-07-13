@@ -25,8 +25,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	QWidget::connect(&d, SIGNAL(scanDone()), this, SLOT(updateScanView()));
 	QWidget::connect(&d, SIGNAL(locked(std::array<QVector<QPointF>, static_cast<int>(lockViewPlotTypes::COUNT)> &)), this,
 		SLOT(updateLockView(std::array<QVector<QPointF>, static_cast<int>(lockViewPlotTypes::COUNT)> &)));
-	QWidget::connect(&d, SIGNAL(collectedBlockData(std::array<QVector<QPointF>, PS2000_MAX_CHANNELS> &)), this,
-		SLOT(updateLiveView(std::array<QVector<QPointF>, PS2000_MAX_CHANNELS> &)));
+	QWidget::connect(&d, SIGNAL(collectedBlockData(std::array<QVector<QPointF>, PS2000A_MAX_CHANNELS> &)), this,
+		SLOT(updateLiveView(std::array<QVector<QPointF>, PS2000A_MAX_CHANNELS> &)));
 
 	QWidget::connect(&d, SIGNAL(acquisitionParametersChanged(ACQUISITION_PARAMETERS)), this,
 		SLOT(updateAcquisitionParameters(ACQUISITION_PARAMETERS)));
@@ -357,7 +357,7 @@ void MainWindow::on_scanWaveform_activated(const int index) {
 }
 
 void MainWindow::on_scanFrequency_valueChanged(const double value) {
-	d.setScanParameters(3, value);
+	d.setScanFrequency(value);
 }
 
 void MainWindow::on_scanSteps_valueChanged(const int value) {
@@ -398,7 +398,7 @@ void MainWindow::on_decrementVoltage_clicked() {
 	d.decrementPiezoVoltage();
 }
 
-void MainWindow::updateLiveView(std::array<QVector<QPointF>, PS2000_MAX_CHANNELS> &data) {
+void MainWindow::updateLiveView(std::array<QVector<QPointF>, PS2000A_MAX_CHANNELS> &data) {
 	if (view == 0) {
 		int channel = 0;
 		foreach(QtCharts::QLineSeries* series, liveViewPlots) {
@@ -453,15 +453,23 @@ void MainWindow::updateScanView() {
 
 void MainWindow::updateAcquisitionParameters(ACQUISITION_PARAMETERS acquisitionParameters) {
 	// set sample rate
-	ui->sampleRate->setCurrentIndex(acquisitionParameters.timebase);
+	// find index of corresponding timebase value
+	int timebaseIndex = 0;
+	for (int i(0); i < d.sampleRates.size(); i++) {
+		if (d.sampleRates[i] == acquisitionParameters.timebase) {
+			timebaseIndex = i;
+			break;
+		}
+	}
+	ui->sampleRate->setCurrentIndex(timebaseIndex);
 	// set number of samples
 	ui->sampleNumber->setValue(acquisitionParameters.no_of_samples);
 	// set range
-	ui->chARange->setCurrentIndex(acquisitionParameters.channelSettings[0].range - 2);
-	ui->chBRange->setCurrentIndex(acquisitionParameters.channelSettings[1].range - 2);
+	ui->chARange->setCurrentIndex(acquisitionParameters.channelSettings[0].range);
+	ui->chBRange->setCurrentIndex(acquisitionParameters.channelSettings[1].range);
 	// set coupling
-	ui->chACoupling->setCurrentIndex(acquisitionParameters.channelSettings[0].DCcoupled);
-	ui->chBCoupling->setCurrentIndex(acquisitionParameters.channelSettings[1].DCcoupled);
+	ui->chACoupling->setCurrentIndex(acquisitionParameters.channelSettings[0].coupling);
+	ui->chBCoupling->setCurrentIndex(acquisitionParameters.channelSettings[1].coupling);
 }
 
 void MainWindow::updateLockState(LOCKSTATE lockState) {

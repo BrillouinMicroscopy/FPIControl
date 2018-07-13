@@ -161,7 +161,7 @@
           </size>
          </property>
          <property name="currentIndex">
-          <number>3</number>
+          <number>0</number>
          </property>
          <item>
           <property name="text">
@@ -186,6 +186,21 @@
          <item>
           <property name="text">
            <string>Ramp Down</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Sinc</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Gaussian</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Halfsine</string>
           </property>
          </item>
          <item>
@@ -242,7 +257,7 @@
           </rect>
          </property>
          <property name="minimum">
-          <double>1.000000000000000</double>
+          <double>0.000000000000000</double>
          </property>
          <property name="maximum">
           <double>10000.000000000000000</double>
@@ -649,6 +664,16 @@
           </property>
           <item>
            <property name="text">
+            <string>±10 mV</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>±20 mV</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
             <string>±50 mV</string>
            </property>
           </item>
@@ -773,6 +798,16 @@
           </property>
           <item>
            <property name="text">
+            <string>±10 mV</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>±20 mV</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
             <string>±50 mV</string>
            </property>
           </item>
@@ -857,61 +892,71 @@
           </rect>
          </property>
          <property name="currentIndex">
-          <number>10</number>
+          <number>0</number>
          </property>
          <item>
           <property name="text">
-           <string>200 MS/s</string>
+           <string>500 MS/s</string>
           </property>
          </item>
          <item>
           <property name="text">
-           <string>100 MS/s</string>
+           <string>250 MS/s</string>
           </property>
          </item>
          <item>
           <property name="text">
-           <string>50 MS/s</string>
+           <string>125 MS/s</string>
           </property>
          </item>
          <item>
           <property name="text">
-           <string>25 MS/s</string>
+           <string>62.5 MS/s</string>
           </property>
          </item>
          <item>
           <property name="text">
-           <string>12.5 MS/s</string>
+           <string>31.25 MS/s</string>
           </property>
          </item>
          <item>
           <property name="text">
-           <string>6.25 MS/s</string>
+           <string>15.625 MS/s</string>
           </property>
          </item>
          <item>
           <property name="text">
-           <string>3.125 MS/s</string>
+           <string>7.8125 MS/s</string>
           </property>
          </item>
          <item>
           <property name="text">
-           <string>1562.5 kS/s</string>
+           <string>3.906 MS/s</string>
           </property>
          </item>
          <item>
           <property name="text">
-           <string>781.25 kS/s</string>
+           <string>1.953 MS/s</string>
           </property>
          </item>
          <item>
           <property name="text">
-           <string>390.625 kS/s</string>
+           <string>976.6 kS/s</string>
           </property>
          </item>
          <item>
           <property name="text">
-           <string>195.3125 kS/s</string>
+           <string>488.3 kS/s</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>244.1 kS/s</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>122.1 kS/s</string>
           </property>
          </item>
         </widget>

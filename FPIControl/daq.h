@@ -9,20 +9,18 @@
 #include <chrono>
 #include <ctime>
 
-#include "ps2000.h"
+#include "ps2000aApi.h"
 #include "PDH.h"
 #include "generalmath.h"
 
 #define BUFFER_SIZE 	8000
-#define BUFFER_SIZE_STREAMING 50000		// Overview buffer size
-#define NUM_STREAMING_SAMPLES 100000	// Number of streaming samples to collect
-#define MAX_CHANNELS 4
 #define SINGLE_CH_SCOPE 1				// Single channel scope
 #define DUAL_SCOPE 2					// Dual channel scope
+#define QUAD_SCOPE 4
 
 typedef struct {
-	int16_t DCcoupled;
-	int16_t range;
+	PS2000A_COUPLING coupling;
+	PS2000A_RANGE range;
 	int16_t enabled;
 } DEFAULT_CHANNEL_SETTINGS;
 
@@ -31,13 +29,13 @@ typedef struct {
 	int32_t 	time_interval;
 	int16_t 	time_units;
 	int16_t 	oversample;
-	int32_t 	no_of_samples = 1000;	// set to a value which allows a clean frequency analysis for 5000 Hz modulation frequency at timebase 10
+	uint32_t 	no_of_samples = 1000;	// set to a value which allows a clean frequency analysis for 5000 Hz modulation frequency at timebase 10
 	int32_t 	max_samples;
 	int32_t 	time_indisposed_ms;
-	int16_t		timebase = 10;
+	uint32_t	timebase = 514;
 	DEFAULT_CHANNEL_SETTINGS channelSettings[2] = {
-		{0, PS2000_RANGE::PS2000_200MV, TRUE},
-		{0, PS2000_RANGE::PS2000_500MV, TRUE}
+		{PS2000A_AC, PS2000A_RANGE::PS2000A_200MV, TRUE},
+		{PS2000A_DC, PS2000A_RANGE::PS2000A_500MV, TRUE}
 	};
 } ACQUISITION_PARAMETERS;
 
@@ -45,7 +43,7 @@ typedef struct {
 	int32_t amplitude = 2e6;		// [µV] peak to peak voltage
 	int32_t offset = 0;				// 
 	int16_t waveform = 3;			// type of waveform
-	int32_t frequency = 100;		// frequency of the scan
+	float frequency = 100;		// frequency of the scan
 	int32_t	nrSteps = 100;			// number of steps for the manual scan
 } SCAN_PARAMETERS;
 
@@ -58,7 +56,7 @@ typedef struct {
 
 typedef struct {
 	double proportional = 0.01;		//		control parameter of the proportional part
-	double integral = 0.005;			//		control parameter of the integral part
+	double integral = 0.005;		//		control parameter of the integral part
 	double derivative = 0.0;		//		control parameter of the derivative part
 	double frequency = 5000;		// [Hz] approx. frequency of the reference signal
 	double phase = 0;				// [°]	phase shift between reference and detector signal
@@ -118,21 +116,17 @@ class daq : public QObject {
 		bool disablePiezo();
 		void incrementPiezoVoltage();
 		void decrementPiezoVoltage();
-		QVector<QPointF> getStreamingBuffer(int ch);
 		bool connect();
 		bool disconnect();
 		bool connectPiezo();
 		bool disconnectPiezo();
-		void startStreaming();
-		void collectStreamingData();
-		void stopStreaming();
 		void set_sig_gen();
-		void set_trigger_advanced();
 		void setSampleRate(int index);
 		void setCoupling(int index, int ch);
 		void setRange(int index, int ch);
 		void setNumberSamples(int32_t no_of_samples);
 		void setScanParameters(int type, int value);
+		void setScanFrequency(float value);
 		void setLockParameters(int type, double value);
 		void toggleOffsetCompensation(bool compensate);
 		void scanManual();
@@ -140,12 +134,16 @@ class daq : public QObject {
 		SCAN_DATA getScanData();
 		LOCK_PARAMETERS getLockParameters();
 
-		std::array<QVector<QPointF>, PS2000_MAX_CHANNELS> data;
+		std::array<QVector<QPointF>, PS2000A_MAX_CHANNELS> data;
 		std::array<QVector<QPointF>, static_cast<int>(lockViewPlotTypes::COUNT)> lockDataPlot;
 
 		double currentVoltage = 0;
 		double piezoVoltage = 0;
 		int compensationTimer = 0;
+
+		const std::vector<int> sampleRates = { 0, 1, 2, 3, 4, 6, 10, 18, 34, 66, 130, 258, 514 };
+
+		int16_t buffers[PS2000A_MAX_CHANNEL_BUFFERS][BUFFER_SIZE * sizeof(int16_t)];
 
 	private slots:
 
@@ -153,22 +151,14 @@ class daq : public QObject {
 		void scanDone();
 		void collectedData();
 		void locked(std::array<QVector<QPointF>, static_cast<int>(lockViewPlotTypes::COUNT)> &);
-		void collectedBlockData(std::array<QVector<QPointF>, PS2000_MAX_CHANNELS> &);
+		void collectedBlockData(std::array<QVector<QPointF>, PS2000A_MAX_CHANNELS> &);
 		void acquisitionParametersChanged(ACQUISITION_PARAMETERS);
 		void lockStateChanged(LOCKSTATE);
 		void compensationStateChanged(bool);
 
 	private:
-		static void __stdcall ps2000FastStreamingReady2(
-			int16_t **overviewBuffers,
-			int16_t   overflow,
-			uint32_t  triggeredAt,
-			int16_t   triggered,
-			int16_t   auto_stop,
-			uint32_t  nValues
-		);
 		void setAcquisitionParameters();
-		std::array<std::vector<int32_t>, PS2000_MAX_CHANNELS> collectBlockData();
+		std::array<std::vector<int32_t>, PS2000A_MAX_CHANNELS> collectBlockData();
 		int32_t adc_to_mv(
 			int32_t raw,
 			int32_t ch
