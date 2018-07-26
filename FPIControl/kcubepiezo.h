@@ -1,22 +1,24 @@
 #ifndef KCUBEPIEZO_H
 #define KCUBEPIEZO_H
 
+#include <QMainWindow>
+#include <QtCore/QObject>
+#include <QtWidgets>
+
 #include <Thorlabs.MotionControl.KCube.Piezo.h>
 #include <cmath>
 
 typedef struct {
-	short maxVoltage = 750;										// maximum output voltage
+	short maxVoltage = 750;												// maximum output voltage
 	PZ_InputSourceFlags source = PZ_InputSourceFlags::PZ_Potentiometer;	// voltage input source
-	PZ_ControlModeTypes mode = PZ_ControlModeTypes::PZ_OpenLoop;// mode type
-} DEFAULT_SETTINGS;
+	PZ_ControlModeTypes mode = PZ_ControlModeTypes::PZ_OpenLoop;		// mode type
+	bool enabled = true;
+} PIEZO_SETTINGS;
 
-class kcubepiezo {
+class kcubepiezo : public QObject {
+	Q_OBJECT
 
 public:
-	void connect();
-	void disconnect();
-	void enable();
-	void disable();
 	void setDefaults();
 	double getVoltage();
 	void setVoltage(double voltage);
@@ -29,10 +31,23 @@ public:
 
 	char const * serialNo = "29501039";	// serial number of the KCube Piezo device (can be found in Kinesis) TODO: make this a changeable parameter
 
-	DEFAULT_SETTINGS defaultSettings;
+	PIEZO_SETTINGS defaultSettings;
 
 private:
+	bool m_isConnected = false;
+	bool m_isEnabled = false;
 	int outputVoltageIncrement = 0;
+
+public slots:
+	void connect_device();
+	void disconnect_device();
+	void init() {};
+	void enable();
+	void disable();
+
+signals:
+	void connected(bool);
+	void settingsChanged(PIEZO_SETTINGS);
 };
 
 #endif // KCUBEPIEZO_H

@@ -22,20 +22,68 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->setupUi(this);
 
-	QWidget::connect(&d, SIGNAL(scanDone()), this, SLOT(updateScanView()));
-	QWidget::connect(&d, SIGNAL(locked(std::array<QVector<QPointF>, static_cast<int>(lockViewPlotTypes::COUNT)> &)), this,
-		SLOT(updateLockView(std::array<QVector<QPointF>, static_cast<int>(lockViewPlotTypes::COUNT)> &)));
-	QWidget::connect(&d, SIGNAL(collectedBlockData(std::array<QVector<QPointF>, PS2000_MAX_CHANNELS> &)), this,
-		SLOT(updateLiveView(std::array<QVector<QPointF>, PS2000_MAX_CHANNELS> &)));
+	qRegisterMetaType<ACQUISITION_PARAMETERS>("ACQUISITION_PARAMETERS");
+	qRegisterMetaType<LOCKSTATE>("LOCKSTATE");
+	qRegisterMetaType<PIEZO_SETTINGS>("PIEZO_SETTINGS");
 
-	QWidget::connect(&d, SIGNAL(acquisitionParametersChanged(ACQUISITION_PARAMETERS)), this,
-		SLOT(updateAcquisitionParameters(ACQUISITION_PARAMETERS)));
+	// slot laser connection
+	static QMetaObject::Connection connection = QWidget::connect(
+		m_piezoControl,
+		SIGNAL(connected(bool)),
+		this,
+		SLOT(piezoConnectionChanged(bool))
+	);
 
-	QWidget::connect(&d, SIGNAL(lockStateChanged(LOCKSTATE)), this,
-		SLOT(updateLockState(LOCKSTATE)));
+	connection = QWidget::connect(
+		m_piezoControl,
+		SIGNAL(settingsChanged(PIEZO_SETTINGS)),
+		this,
+		SLOT(updatePiezoSettings(PIEZO_SETTINGS))
+	);
 
-	QWidget::connect(&d, SIGNAL(compensationStateChanged(bool)), this,
-		SLOT(updateCompensationState(bool)));
+	// slot daq acquisition running
+	connection = QWidget::connect(
+		m_lockingControl,
+		SIGNAL(s_acquireLockingRunning(bool)),
+		this,
+		SLOT(showAcquireLockingRunning(bool))
+	);
+
+	// slot daq acquisition running
+	connection = QWidget::connect(
+		m_lockingControl,
+		SIGNAL(s_scanRunning(bool)),
+		this,
+		SLOT(showScanRunning(bool))
+	);
+
+	connection = QWidget::connect(
+		m_lockingControl,
+		SIGNAL(s_scanPassAcquired()),
+		this,
+		SLOT(updateScanView())
+	);
+
+	connection = QWidget::connect(
+		m_lockingControl,
+		SIGNAL(locked()),
+		this,
+		SLOT(updateLockView())
+	);
+
+	connection = QWidget::connect(
+		m_lockingControl,
+		SIGNAL(lockStateChanged(LOCKSTATE)),
+		this,
+		SLOT(updateLockState(LOCKSTATE))
+	);
+
+	connection = QWidget::connect(
+		m_lockingControl,
+		SIGNAL(compensationStateChanged(bool)),
+		this,
+		SLOT(updateCompensationState(bool))
+	);
 	
 	// set up live view plots
 	liveViewPlots.resize(static_cast<int>(liveViewPlotTypes::COUNT));
@@ -111,7 +159,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	}
 	lockViewChart->createDefaultAxes();
 	lockViewChart->axisX()->setRange(0, 1024);
-	lockViewChart->axisY()->setRange(-1, 4);
+	lockViewChart->axisY()->setRange(-2, 2);
 	lockViewChart->axisX()->setTitleText("Time [s]");
 	lockViewChart->setTitle("Lock View");
 	lockViewChart->layout()->setContentsMargins(0, 0, 0, 0);
@@ -149,21 +197,20 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->plotAxes->setRubberBand(QtCharts::QChartView::RectangleRubberBand);
 
 	// set default values of GUI elements
-	SCAN_PARAMETERS scanParameters = d.getScanParameters();
-	ui->scanAmplitude->setValue(scanParameters.amplitude / static_cast<double>(1e6));
-	ui->scanOffset->setValue(scanParameters.offset / static_cast<double>(1e6));
-	ui->scanFrequency->setValue(scanParameters.frequency);
-	ui->scanSteps->setValue(scanParameters.nrSteps);
-	ui->scanWaveform->setCurrentIndex(scanParameters.waveform);
+	SCAN_SETTINGS scanSettings = m_lockingControl->getScanSettings();
+	ui->scanStart->setValue(scanSettings.low / static_cast<double>(1e6));
+	ui->scanEnd->setValue(scanSettings.high / static_cast<double>(1e6));
+	ui->scanInterval->setValue(scanSettings.interval);
+	ui->scanSteps->setValue(scanSettings.nrSteps);
 
 	// set default values of lockin parameters
-	LOCK_PARAMETERS lockParameters = d.getLockParameters();
-	ui->proportionalTerm->setValue(lockParameters.proportional);
-	ui->integralTerm->setValue(lockParameters.integral);
-	ui->derivativeTerm->setValue(lockParameters.derivative);
-	ui->frequency->setValue(lockParameters.frequency);
-	ui->phase->setValue(lockParameters.phase);
-	ui->offsetCheckBox->setChecked(lockParameters.compensate);
+	LOCK_SETTINGS lockSettings = m_lockingControl->getLockSettings();
+	ui->proportionalTerm->setValue(lockSettings.proportional);
+	ui->integralTerm->setValue(lockSettings.integral);
+	ui->derivativeTerm->setValue(lockSettings.derivative);
+	ui->frequency->setValue(lockSettings.frequency);
+	ui->phase->setValue(lockSettings.phase);
+	ui->offsetCheckBox->setChecked(lockSettings.compensate);
 
 	// connect legend marker to toggle visibility of plots
 	MainWindow::connectMarkers();
@@ -205,11 +252,107 @@ MainWindow::MainWindow(QWidget *parent) :
 	// hide floating view elements by default
 	ui->floatingViewLabel->hide();
 	ui->floatingViewCheckBox->hide();
+
+	initDAQ();
+	initSettingsDialog();
+
+	// start acquisition thread
+	m_acquisitionThread.startWorker(m_lockingControl);
+	m_acquisitionThread.startWorker(m_piezoControl);
+
+	QMetaObject::invokeMethod(m_piezoControl, "connect_device", Qt::AutoConnection);
 }
 
 MainWindow::~MainWindow() {
+	m_acquisitionThread.exit();
+	m_acquisitionThread.wait();
     delete ui;
 }
+
+void MainWindow::on_actionQuit_triggered() {
+	QApplication::quit();
+}
+
+void MainWindow::initDAQ() {
+	// deinitialize DAQ if necessary
+	if (m_dataAcquisition) {
+		m_dataAcquisition->deleteLater();
+		m_dataAcquisition = nullptr;
+	}
+
+	// initialize correct DAQ type
+	switch (m_daqType) {
+	case PS_TYPES::MODEL_PS2000:
+		m_dataAcquisition = new daq_PS2000(nullptr);
+		break;
+	case PS_TYPES::MODEL_PS2000A:
+		m_dataAcquisition = new daq_PS2000A(nullptr);
+		break;
+	default:
+		m_dataAcquisition = new daq_PS2000(nullptr);
+		break;
+	}
+
+	m_acquisitionThread.startWorker(m_dataAcquisition);
+
+	// reestablish m_dataAcquisition connections and store them for
+	// possible disconnection
+	QMetaObject::Connection connection = QWidget::connect(
+		m_dataAcquisition,
+		SIGNAL(connected(bool)),
+		this,
+		SLOT(daqConnectionChanged(bool))
+	);
+
+	connection = QWidget::connect(
+		m_dataAcquisition,
+		SIGNAL(s_acquisitionRunning(bool)),
+		this,
+		SLOT(showAcqRunning(bool))
+	);
+
+	connection = QWidget::connect(
+		m_dataAcquisition,
+		SIGNAL(collectedBlockData()),
+		this,
+		SLOT(updateLiveView())
+	);
+
+	connection = QWidget::connect(
+		m_dataAcquisition,
+		SIGNAL(acquisitionParametersChanged(ACQUISITION_PARAMETERS)),
+		this,
+		SLOT(updateAcquisitionParameters(ACQUISITION_PARAMETERS))
+	);
+
+	updateSamplingRates();
+
+	QMetaObject::invokeMethod(m_dataAcquisition, "connect_daq", Qt::AutoConnection);
+};
+
+void MainWindow::updateSamplingRates() {
+	std::vector<double> samplingRates = m_dataAcquisition->getSamplingRates();
+	ui->sampleRate->clear();
+	std::for_each(samplingRates.begin(), samplingRates.end(),
+		[this](double samplingRate) {
+			std::string string = getSamplingRateString(samplingRate);
+			ui->sampleRate->addItem(QString::fromStdString(string));
+		}
+	);
+	ACQUISITION_PARAMETERS acquisitionParameters = m_dataAcquisition->getAcquisitionParameters();
+	ui->sampleRate->setCurrentIndex(acquisitionParameters.timebaseIndex);
+}
+
+std::string MainWindow::getSamplingRateString(double samplingRate) {
+	if (samplingRate > 1e6) {
+		return std::to_string((int)(samplingRate / 1e6)) + " MS/s";
+	} else if (samplingRate > 1e3) {
+		return std::to_string((int)(samplingRate / 1e3)) + " kS/s";
+	} else {
+		return std::to_string((int)(samplingRate)) + " S/s";
+	}
+}
+
 
 void MainWindow::on_actionAbout_triggered() {
 	QString str = QString("FPIControl Version %1.%2.%3 <br> Build from commit: <a href='%4'>%5</a><br>Author: <a href='mailto:%6?subject=FPIControl'>%7</a><br>Date: %8")
@@ -223,6 +366,76 @@ void MainWindow::on_actionAbout_triggered() {
 		.arg(Version::Date.c_str());
 
 	QMessageBox::about(this, tr("About FPIControl"), str);
+}
+
+void MainWindow::on_actionSettings_DAQ_triggered() {
+	settingsDialog->show();
+}
+
+void MainWindow::closeSettings() {
+	settingsDialog->hide();
+}
+
+void MainWindow::initSettingsDialog() {
+	settingsDialog = new QDialog(0, Qt::WindowTitleHint | Qt::WindowCloseButtonHint | Qt::WindowStaysOnTopHint);
+	settingsDialog->setWindowTitle("Settings");
+	settingsDialog->setWindowModality(Qt::ApplicationModal);
+
+	QVBoxLayout *vLayout = new QVBoxLayout(settingsDialog);
+
+	QWidget *daqWidget = new QWidget();
+	daqWidget->setMinimumHeight(100);
+	daqWidget->setMinimumWidth(400);
+	QGroupBox *box = new QGroupBox(daqWidget);
+	box->setTitle("Data Acquisition card");
+	box->setMinimumHeight(100);
+	box->setMinimumWidth(400);
+
+	vLayout->addWidget(daqWidget);
+
+	QWidget *buttonWidget = new QWidget();
+	vLayout->addWidget(buttonWidget);
+
+	QHBoxLayout *layout = new QHBoxLayout(box);
+
+	QLabel *label = new QLabel("Currently selected DAQ");
+	layout->addWidget(label);
+
+	QComboBox *dropdown = new QComboBox();
+	layout->addWidget(dropdown);
+	gsl::index i{ 0 };
+	for (auto type : m_dataAcquisition->PS_NAMES) {
+		dropdown->insertItem(i, QString::fromStdString(type));
+		i++;
+	}
+	dropdown->setCurrentIndex((int)m_daqType);
+
+	static QMetaObject::Connection connection = QWidget::connect(
+		dropdown,
+		SIGNAL(currentIndexChanged(int)),
+		this,
+		SLOT(selectDAQ(int))
+	);
+
+	QPushButton *okButton = new QPushButton(buttonWidget);
+	okButton->setText(tr("OK"));
+	okButton->setMaximumWidth(100);
+	vLayout->addWidget(okButton);
+	vLayout->setAlignment(okButton, Qt::AlignRight);
+
+	connection = QWidget::connect(
+		okButton,
+		SIGNAL(clicked()),
+		this,
+		SLOT(closeSettings())
+	);
+
+	settingsDialog->layout()->setSizeConstraint(QLayout::SetFixedSize);
+}
+
+void MainWindow::selectDAQ(int index) {
+	m_daqType = (PS_TYPES)index;
+	initDAQ();
 }
 
 void MainWindow::connectMarkers() {
@@ -289,7 +502,10 @@ void MainWindow::handleMarkerClicked() {
 }
 
 void MainWindow::on_acquisitionButton_clicked() {
-	bool running = d.startStopAcquisition();
+	QMetaObject::invokeMethod(m_dataAcquisition, "startStopAcquisition", Qt::QueuedConnection);
+}
+
+void MainWindow::showAcqRunning(bool running) {
 	if (running) {
 		ui->acquisitionButton->setText(QString("Stop"));
 	} else {
@@ -297,110 +513,118 @@ void MainWindow::on_acquisitionButton_clicked() {
 	}
 }
 
+void MainWindow::showScanRunning(bool running) {
+	if (running) {
+		ui->scanButton->setText(QString("Stop"));
+	} else {
+		ui->scanButton->setText(QString("Scan"));
+	}
+}
+
 void MainWindow::on_acquireLockButton_clicked() {
-	bool running = d.startStopAcquireLocking();
+	QMetaObject::invokeMethod(m_lockingControl, "startStopAcquireLocking", Qt::AutoConnection);
+}
+
+void MainWindow::showAcquireLockingRunning(bool running) {
 	if (running) {
 		ui->acquireLockButton->setText(QString("Stop"));
-	}
-	else {
+	} else {
 		ui->lockButton->setText(QString("Lock"));
 		ui->acquireLockButton->setText(QString("Acquire"));
 	}
 }
 
 void MainWindow::on_lockButton_clicked() {
-	d.startStopLocking();
-	//if (running) {
-	//	ui->lockButton->setText(QString("Unlock"));
-	//}
-	//else {
-	//	ui->lockButton->setText(QString("Lock"));
-	//}
+	QMetaObject::invokeMethod(m_lockingControl, "startStopLocking", Qt::AutoConnection);
 }
 
 void MainWindow::on_sampleRate_activated(const int index) {
-	d.setSampleRate(index);
+	m_dataAcquisition->setSampleRate(index);
 }
 
 void MainWindow::on_chACoupling_activated(const int index) {
-	d.setCoupling(index, 0);
+	m_dataAcquisition->setCoupling(index, 0);
 }
 
 void MainWindow::on_chBCoupling_activated(const int index) {
-	d.setCoupling(index, 1);
+	m_dataAcquisition->setCoupling(index, 1);
 }
 
 void MainWindow::on_chARange_activated(const int index) {
-	d.setRange(index, 0);
+	m_dataAcquisition->setRange(index, 0);
 }
 
 void MainWindow::on_chBRange_activated(const int index) {
-	d.setRange(index, 1);
+	m_dataAcquisition->setRange(index, 1);
 }
 
 void MainWindow::on_sampleNumber_valueChanged(const int no_of_samples) {
-	d.setNumberSamples(no_of_samples);
+	m_dataAcquisition->setNumberSamples(no_of_samples);
 }
 
-void MainWindow::on_scanAmplitude_valueChanged(const double value) {
+void MainWindow::on_scanStart_valueChanged(const double value) {
 	// value is in [V], has to me set in [mV]
-	d.setScanParameters(0, static_cast<int>(1e6*value));
+	m_lockingControl->setScanParameters(SCANPARAMETERS::LOW, static_cast<int>(1e6*value));
 }
 
-void MainWindow::on_scanOffset_valueChanged(const double value) {
+void MainWindow::on_scanEnd_valueChanged(const double value) {
 	// value is in [V], has to me set in [mV]
-	d.setScanParameters(1, static_cast<int>(1e6*value));
+	m_lockingControl->setScanParameters(SCANPARAMETERS::HIGH, static_cast<int>(1e6*value));
 }
 
-void MainWindow::on_scanWaveform_activated(const int index) {
-	d.setScanParameters(2, index);
-}
-
-void MainWindow::on_scanFrequency_valueChanged(const double value) {
-	d.setScanParameters(3, value);
+void MainWindow::on_scanInterval_valueChanged(const double value) {
+	m_lockingControl->setScanParameters(SCANPARAMETERS::INTERVAL, value);
 }
 
 void MainWindow::on_scanSteps_valueChanged(const int value) {
-	d.setScanParameters(4, value);
+	m_lockingControl->setScanParameters(SCANPARAMETERS::STEPS, value);
 }
 
 /***********************************
  * Set parameters for cavity locking 
  ***********************************/
 void MainWindow::on_proportionalTerm_valueChanged(const double value) {
-	d.setLockParameters(0, value);
+	m_lockingControl->setLockParameters(LOCKPARAMETERS::P, value);
 }
 void MainWindow::on_integralTerm_valueChanged(const double value) {
-	d.setLockParameters(1, value);
+	m_lockingControl->setLockParameters(LOCKPARAMETERS::I, value);
 }
 void MainWindow::on_derivativeTerm_valueChanged(const double value) {
-	d.setLockParameters(2, value);
+	m_lockingControl->setLockParameters(LOCKPARAMETERS::D, value);
 }
 void MainWindow::on_frequency_valueChanged(const double value) {
-	d.setLockParameters(3, value);
+	m_lockingControl->setLockParameters(LOCKPARAMETERS::FREQUENCY, value);
 }
 void MainWindow::on_phase_valueChanged(const double value) {
-	d.setLockParameters(4, value);
+	m_lockingControl->setLockParameters(LOCKPARAMETERS::PHASE, value);
 }
 void MainWindow::on_offsetCheckBox_clicked(const bool checked) {
-	if (checked) {
-		d.toggleOffsetCompensation(checked);
-	} else {
-		d.toggleOffsetCompensation(checked);
-	}
+	m_lockingControl->toggleOffsetCompensation(checked);
 }
 
 void MainWindow::on_incrementVoltage_clicked() {
-	d.incrementPiezoVoltage();
+	m_piezoControl->incrementVoltage(1);
 }
 
 void MainWindow::on_decrementVoltage_clicked() {
-	d.decrementPiezoVoltage();
+	m_piezoControl->incrementVoltage(-1);
 }
 
-void MainWindow::updateLiveView(std::array<QVector<QPointF>, PS2000_MAX_CHANNELS> &data) {
-	if (view == 0) {
-		int channel = 0;
+void MainWindow::updateLiveView() {
+	if (m_selectedView == VIEWS::LIVE) {
+
+		m_dataAcquisition->m_liveBuffer->m_usedBuffers->acquire();
+		int16_t **buffer = m_dataAcquisition->m_liveBuffer->getReadBuffer();
+
+		std::array<QVector<QPointF>, PS2000_MAX_CHANNELS> data;
+		for (gsl::index channel{ 0 }; channel < 4; channel++) {
+			data[channel].resize(1000);
+			for (gsl::index jj{ 0 }; jj < 1000; jj++) {
+				data[channel][jj] = QPointF(jj, buffer[channel][jj] / static_cast<double>(1e3));
+			}
+		}
+
+		gsl::index channel{ 0 };
 		foreach(QtCharts::QLineSeries* series, liveViewPlots) {
 			if (series->isVisible()) {
 				series->replace(data[channel]);
@@ -408,12 +632,15 @@ void MainWindow::updateLiveView(std::array<QVector<QPointF>, PS2000_MAX_CHANNELS
 			++channel;
 		}
 		liveViewChart->axisX()->setRange(0, data[0].length());
+
+		m_dataAcquisition->m_liveBuffer->m_freeBuffers->release();
 	}
 }
 
-void MainWindow::updateLockView(std::array<QVector<QPointF>, static_cast<int>(lockViewPlotTypes::COUNT)> &data) {
-	if (view == 1) {
-		int channel = 0;
+void MainWindow::updateLockView() {
+	if (m_selectedView == VIEWS::LOCK) {
+		std::array<QVector<QPointF>, static_cast<int>(lockViewPlotTypes::COUNT)> data = m_lockingControl->m_lockDataPlot;
+		gsl::index channel{ 0 };
 		foreach(QtCharts::QLineSeries* series, lockViewPlots) {
 			if (series->isVisible()) {
 				series->replace(data[channel]);
@@ -433,13 +660,16 @@ void MainWindow::updateLockView(std::array<QVector<QPointF>, static_cast<int>(lo
 }
 
 void MainWindow::updateScanView() {
-	if (view == 2) {
-		SCAN_DATA scanData = d.getScanData();
+	if (m_selectedView == VIEWS::SCAN) {
+		SCAN_DATA scanData = m_lockingControl->scanData;
+
 		QVector<QPointF> intensity;
-		intensity.reserve(scanData.nrSteps);
 		QVector<QPointF> error;
+
+		intensity.reserve(scanData.nrSteps);
 		error.reserve(scanData.nrSteps);
-		for (int j(0); j < scanData.nrSteps; j++) {
+
+		for (gsl::index j{ 0 }; j < scanData.nrSteps; j++) {
 			intensity.append(QPointF(scanData.voltages[j] / static_cast<double>(1e6), scanData.intensity[j] / static_cast<double>(1000)));
 			error.append(QPointF(scanData.voltages[j] / static_cast<double>(1e6), std::real(scanData.error[j])));
 		}
@@ -460,8 +690,8 @@ void MainWindow::updateAcquisitionParameters(ACQUISITION_PARAMETERS acquisitionP
 	ui->chARange->setCurrentIndex(acquisitionParameters.channelSettings[0].range - 2);
 	ui->chBRange->setCurrentIndex(acquisitionParameters.channelSettings[1].range - 2);
 	// set coupling
-	ui->chACoupling->setCurrentIndex(acquisitionParameters.channelSettings[0].DCcoupled);
-	ui->chBCoupling->setCurrentIndex(acquisitionParameters.channelSettings[1].DCcoupled);
+	ui->chACoupling->setCurrentIndex(acquisitionParameters.channelSettings[0].coupling);
+	ui->chBCoupling->setCurrentIndex(acquisitionParameters.channelSettings[1].coupling);
 }
 
 void MainWindow::updateLockState(LOCKSTATE lockState) {
@@ -494,14 +724,10 @@ void MainWindow::updateCompensationState(bool compensating) {
 	}
 }
 
-void MainWindow::on_scanButtonManual_clicked() {
-	d.scanManual();
-}
-
 void MainWindow::on_selectDisplay_activated(const int index) {
-	view = index;
-	switch (index) {
-		case 0:
+	m_selectedView = static_cast<VIEWS>(index);
+	switch (m_selectedView) {
+		case VIEWS::LIVE:
 			// it is necessary to hide the series, because they do not get removed
 			// after setChart in case useOpenGL == true (bug in QT?)
 			foreach(QtCharts::QLineSeries* series, scanViewPlots) {
@@ -518,7 +744,7 @@ void MainWindow::on_selectDisplay_activated(const int index) {
 			ui->floatingViewCheckBox->hide();
 			//MainWindow::updateLiveView();
 			break;
-		case 1:
+		case VIEWS::LOCK:
 			// it is necessary to hide the series, because they do not get removed
 			// after setChart in case useOpenGL == true (bug in QT?)
 			foreach(QtCharts::QLineSeries* series, liveViewPlots) {
@@ -535,7 +761,7 @@ void MainWindow::on_selectDisplay_activated(const int index) {
 			ui->floatingViewCheckBox->show();
 			//MainWindow::updateScanView();
 			break;
-		case 2:
+		case VIEWS::SCAN:
 			// it is necessary to hide the series, because they do not get removed
 			// after setChart in case useOpenGL == true (bug in QT?)
 			foreach(QtCharts::QLineSeries* series, liveViewPlots) {
@@ -559,63 +785,72 @@ void MainWindow::on_floatingViewCheckBox_clicked(const bool checked) {
 	viewSettings.floatingView = checked;
 }
 
-void MainWindow::on_actionConnect_triggered() {
-	bool connected = d.connect();
-	if (connected) {
-		ui->actionConnect->setEnabled(false);
-		ui->actionDisconnect->setEnabled(true);
-		statusInfo->setText("Successfully connected");
-	} else {
-		ui->actionConnect->setEnabled(true);
-		ui->actionDisconnect->setEnabled(false);
-	}
+void MainWindow::on_actionConnect_DAQ_triggered() {
+	QMetaObject::invokeMethod(m_dataAcquisition, "connect_daq", Qt::AutoConnection);
 }
 
-void MainWindow::on_actionDisconnect_triggered() {
-	bool connected = d.disconnect();
+void MainWindow::on_actionDisconnect_DAQ_triggered() {
+	QMetaObject::invokeMethod(m_dataAcquisition, "disconnect_daq", Qt::AutoConnection);
+}
+
+void MainWindow::daqConnectionChanged(bool connected) {
+	m_isDAQConnected = connected;
 	if (connected) {
-		ui->actionConnect->setEnabled(false);
-		ui->actionDisconnect->setEnabled(true);
-	}  else {
-		ui->actionConnect->setEnabled(true);
-		ui->actionDisconnect->setEnabled(false);
-		statusInfo->setText("Successfully disconnected");
+		statusInfo->setText("Successfully connected to data acquisition card.");
+	} else {
+		statusInfo->setText("Successfully disconnected from data acquisition card.");
+	}
+	ui->actionConnect_DAQ->setEnabled(!connected);
+	ui->actionDisconnect_DAQ->setEnabled(connected);
+	ui->AcquisitionBox->setEnabled(connected);
+	ui->LockingBox->setEnabled(connected);
+	if (m_isDAQConnected && m_isPiezoConnected) {
+		ui->lockButton->setEnabled(connected);
 	}
 }
 
 void MainWindow::on_actionConnect_Piezo_triggered() {
-	bool connected = d.connectPiezo();
-	if (connected) {
-		ui->actionConnect_Piezo->setEnabled(false);
-		ui->actionDisconnect_Piezo->setEnabled(true);
-	}
-	else {
-		ui->actionConnect_Piezo->setEnabled(true);
-		ui->actionDisconnect_Piezo->setEnabled(false);
-	}
+	QMetaObject::invokeMethod(m_piezoControl, "connect_device", Qt::AutoConnection);
 }
 
 void MainWindow::on_actionDisconnect_Piezo_triggered() {
-	bool connected = d.disconnectPiezo();
+	QMetaObject::invokeMethod(m_piezoControl, "disconnect_device", Qt::AutoConnection);
+}
+
+void MainWindow::piezoConnectionChanged(bool connected) {
+	m_isPiezoConnected = connected;
 	if (connected) {
-		ui->actionConnect_Piezo->setEnabled(false);
-		ui->actionDisconnect_Piezo->setEnabled(true);
+		statusInfo->setText("Successfully connected to Piezo.");
+	} else {
+		statusInfo->setText("Successfully disconnected from Piezo.");
 	}
-	else {
-		ui->actionConnect_Piezo->setEnabled(true);
-		ui->actionDisconnect_Piezo->setEnabled(false);
+	ui->actionConnect_Piezo->setEnabled(!connected);
+	ui->actionDisconnect_Piezo->setEnabled(connected);
+	ui->PiezoBox->setEnabled(connected);
+	if (m_isDAQConnected && m_isPiezoConnected) {
+		ui->lockButton->setEnabled(connected);
 	}
+}
+
+void MainWindow::updatePiezoSettings(PIEZO_SETTINGS settings) {
+	ui->enablePiezoCheckBox->blockSignals(true);
+	ui->enablePiezoCheckBox->setChecked(settings.enabled);
+	ui->enablePiezoCheckBox->blockSignals(false);
 }
 
 void MainWindow::on_enablePiezoCheckBox_clicked(const bool checked) {
 	if (checked) {
-		d.enablePiezo();
-	}
-	else {
-		d.disablePiezo();
+		QMetaObject::invokeMethod(m_piezoControl, "enable", Qt::AutoConnection);
+	} else {
+		QMetaObject::invokeMethod(m_piezoControl, "disable", Qt::AutoConnection);
 	}
 }
 
 void MainWindow::on_scanButton_clicked() {
-	d.set_sig_gen();
+	if (!m_lockingControl->scanData.m_running) {
+		QMetaObject::invokeMethod(m_lockingControl, "startScan", Qt::AutoConnection);
+	}
+	else {
+		m_lockingControl->scanData.m_abort = true;
+	}
 }
