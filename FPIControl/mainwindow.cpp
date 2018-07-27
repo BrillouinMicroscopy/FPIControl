@@ -707,7 +707,7 @@ void MainWindow::updateScanView() {
 
 void MainWindow::updateAcquisitionParameters(ACQUISITION_PARAMETERS acquisitionParameters) {
 	// set sample rate
-	ui->sampleRate->setCurrentIndex(acquisitionParameters.timebase);
+	ui->sampleRate->setCurrentIndex(acquisitionParameters.timebaseIndex);
 	// set number of samples
 	ui->sampleNumber->setValue(acquisitionParameters.no_of_samples);
 	// set range
