@@ -133,8 +133,7 @@ private slots:
 	void on_phase_valueChanged(const double value);
 
 	void on_enablePiezoCheckBox_clicked(const bool checked);
-	void on_incrementVoltage_clicked();
-	void on_decrementVoltage_clicked();
+	void on_setVoltage_valueChanged(const double voltage);
 	void on_offsetCheckBox_clicked(const bool checked);
 
 	// SLOTS for updating the plots

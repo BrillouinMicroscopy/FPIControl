@@ -900,32 +900,6 @@
         <property name="title">
          <string>Piezo Control</string>
         </property>
-        <widget class="QPushButton" name="decrementVoltage">
-         <property name="geometry">
-          <rect>
-           <x>155</x>
-           <y>45</y>
-           <width>40</width>
-           <height>34</height>
-          </rect>
-         </property>
-         <property name="text">
-          <string>-</string>
-         </property>
-        </widget>
-        <widget class="QPushButton" name="incrementVoltage">
-         <property name="geometry">
-          <rect>
-           <x>200</x>
-           <y>45</y>
-           <width>40</width>
-           <height>34</height>
-          </rect>
-         </property>
-         <property name="text">
-          <string>+</string>
-         </property>
-        </widget>
         <widget class="QLabel" name="enablePiezoLabel">
          <property name="geometry">
           <rect>
@@ -961,7 +935,7 @@
           <bool>true</bool>
          </property>
         </widget>
-        <widget class="QLabel" name="incrementVoltageLabel">
+        <widget class="QLabel" name="setVoltageLabel">
          <property name="geometry">
           <rect>
            <x>10</x>
@@ -971,7 +945,32 @@
           </rect>
          </property>
          <property name="text">
-          <string>Increment voltage</string>
+          <string>Piezo voltage [V]</string>
+         </property>
+        </widget>
+        <widget class="QDoubleSpinBox" name="setVoltage">
+         <property name="geometry">
+          <rect>
+           <x>150</x>
+           <y>50</y>
+           <width>90</width>
+           <height>25</height>
+          </rect>
+         </property>
+         <property name="decimals">
+          <number>3</number>
+         </property>
+         <property name="minimum">
+          <double>0.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>100.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.100000000000000</double>
+         </property>
+         <property name="value">
+          <double>0.000000000000000</double>
          </property>
         </widget>
        </widget>

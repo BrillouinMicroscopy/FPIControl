@@ -626,12 +626,8 @@ void MainWindow::on_offsetCheckBox_clicked(const bool checked) {
 	m_lockingControl->toggleOffsetCompensation(checked);
 }
 
-void MainWindow::on_incrementVoltage_clicked() {
-	m_piezoControl->incrementVoltage(1);
-}
-
-void MainWindow::on_decrementVoltage_clicked() {
-	m_piezoControl->incrementVoltage(-1);
+void MainWindow::on_setVoltage_valueChanged(const double voltage) {
+	m_piezoControl->setVoltage(voltage);
 }
 
 void MainWindow::updateLiveView() {
