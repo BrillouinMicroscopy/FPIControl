@@ -172,5 +172,25 @@ namespace FPIControlUnitTest {
 				std::vector<double> vector = {};
 				Assert::IsTrue(isnan(generalmath::floatingMax(vector, 2)));
 			}
+
+			TEST_METHOD(TestMethodMinDouble) {
+				std::vector<double> vector = { -1.0, 1.0, 2.0, -6.0 };
+				Assert::AreEqual(-6.0, generalmath::min(vector));
+			}
+
+			TEST_METHOD(TestMethodMinInt) {
+				std::vector<int> vector = { -1, 1, 2, -6 };
+				Assert::AreEqual(-6, generalmath::min(vector));
+			}
+
+			TEST_METHOD(TestMethodMaxDouble) {
+				std::vector<double> vector = { -1.0, 1.0, 2.0, -6.0 };
+				Assert::AreEqual(2.0, generalmath::max(vector));
+			}
+
+			TEST_METHOD(TestMethodMaxInt) {
+				std::vector<int> vector = { -1, 1, 2, -6 };
+				Assert::AreEqual(2, generalmath::max(vector));
+			}
 	};
 }

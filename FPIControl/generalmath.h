@@ -24,24 +24,14 @@ public:
 
 	template <typename T = double>
 	static T max(std::vector<T> vector) {
-		T max = vector[0];
-		for (int jj(0); jj < vector.size(); jj++) {
-			if (vector[jj] > max) {
-				max = vector[jj];
-			}
-		}
-		return max;
+		std::vector<T>::iterator result = std::max_element(std::begin(vector), std::end(vector));
+		return *result;
 	}
 
 	template <typename T = double>
 	static T min(std::vector<T> vector) {
-		T min = vector[0];
-		for (int jj(0); jj < vector.size(); jj++) {
-			if (vector[jj] < min) {
-				min = vector[jj];
-			}
-		}
-		return min;
+		std::vector<T>::iterator result = std::min_element(std::begin(vector), std::end(vector));
+		return *result;
 	}
 
 	template <typename T = double>
