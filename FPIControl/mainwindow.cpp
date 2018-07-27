@@ -369,15 +369,24 @@ void MainWindow::on_actionAbout_triggered() {
 }
 
 void MainWindow::on_actionSettings_DAQ_triggered() {
+	m_daqDropdown->setCurrentIndex((int)m_daqType);
 	settingsDialog->show();
 }
 
-void MainWindow::closeSettings() {
+void MainWindow::saveSettings() {
+	m_daqType = m_daqTypeTemporary;
+	settingsDialog->hide();
+	initDAQ();
+}
+
+void MainWindow::cancelSettings() {
+	m_daqTypeTemporary = m_daqType;
 	settingsDialog->hide();
 }
 
 void MainWindow::initSettingsDialog() {
-	settingsDialog = new QDialog(0, Qt::WindowTitleHint | Qt::WindowCloseButtonHint | Qt::WindowStaysOnTopHint);
+	m_daqTypeTemporary = m_daqType;
+	settingsDialog = new QDialog(this, Qt::WindowTitleHint | Qt::WindowCloseButtonHint);
 	settingsDialog->setWindowTitle("Settings");
 	settingsDialog->setWindowModality(Qt::ApplicationModal);
 
@@ -387,55 +396,69 @@ void MainWindow::initSettingsDialog() {
 	daqWidget->setMinimumHeight(100);
 	daqWidget->setMinimumWidth(400);
 	QGroupBox *box = new QGroupBox(daqWidget);
-	box->setTitle("Data Acquisition card");
+	box->setTitle("Scanning device");
 	box->setMinimumHeight(100);
 	box->setMinimumWidth(400);
 
 	vLayout->addWidget(daqWidget);
 
-	QWidget *buttonWidget = new QWidget();
-	vLayout->addWidget(buttonWidget);
-
 	QHBoxLayout *layout = new QHBoxLayout(box);
 
-	QLabel *label = new QLabel("Currently selected DAQ");
+	QLabel *label = new QLabel("Currently selected device");
 	layout->addWidget(label);
 
-	QComboBox *dropdown = new QComboBox();
-	layout->addWidget(dropdown);
+	m_daqDropdown = new QComboBox();
+	layout->addWidget(m_daqDropdown);
 	gsl::index i{ 0 };
 	for (auto type : m_dataAcquisition->PS_NAMES) {
-		dropdown->insertItem(i, QString::fromStdString(type));
+		m_daqDropdown->insertItem(i, QString::fromStdString(type));
 		i++;
 	}
-	dropdown->setCurrentIndex((int)m_daqType);
+	m_daqDropdown->setCurrentIndex((int)m_daqType);
 
 	static QMetaObject::Connection connection = QWidget::connect(
-		dropdown,
+		m_daqDropdown,
 		SIGNAL(currentIndexChanged(int)),
 		this,
 		SLOT(selectDAQ(int))
 	);
 
-	QPushButton *okButton = new QPushButton(buttonWidget);
+	QWidget *buttonWidget = new QWidget();
+	vLayout->addWidget(buttonWidget);
+
+	QHBoxLayout *buttonLayout = new QHBoxLayout(buttonWidget);
+	buttonLayout->setMargin(0);
+
+	QPushButton *okButton = new QPushButton();
 	okButton->setText(tr("OK"));
 	okButton->setMaximumWidth(100);
-	vLayout->addWidget(okButton);
-	vLayout->setAlignment(okButton, Qt::AlignRight);
+	buttonLayout->addWidget(okButton);
+	buttonLayout->setAlignment(okButton, Qt::AlignRight);
 
 	connection = QWidget::connect(
 		okButton,
 		SIGNAL(clicked()),
 		this,
-		SLOT(closeSettings())
+		SLOT(saveSettings())
+	);
+
+	QPushButton *cancelButton = new QPushButton();
+	cancelButton->setText(tr("Cancel"));
+	cancelButton->setMaximumWidth(100);
+	buttonLayout->addWidget(cancelButton);
+
+	connection = QWidget::connect(
+		cancelButton,
+		SIGNAL(clicked()),
+		this,
+		SLOT(cancelSettings())
 	);
 
 	settingsDialog->layout()->setSizeConstraint(QLayout::SetFixedSize);
 }
 
 void MainWindow::selectDAQ(int index) {
-	m_daqType = (PS_TYPES)index;
-	initDAQ();
+	m_daqTypeTemporary = (PS_TYPES)index;
 }
 
 void MainWindow::connectMarkers() {
