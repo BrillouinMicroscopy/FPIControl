@@ -53,7 +53,7 @@
          <x>0</x>
          <y>0</y>
          <width>288</width>
-         <height>870</height>
+         <height>898</height>
         </rect>
        </property>
        <property name="sizePolicy">
@@ -74,7 +74,7 @@
           <x>10</x>
           <y>310</y>
           <width>250</width>
-          <height>211</height>
+          <height>181</height>
          </rect>
         </property>
         <property name="title">
@@ -84,133 +84,16 @@
          <property name="geometry">
           <rect>
            <x>130</x>
-           <y>170</y>
+           <y>140</y>
            <width>110</width>
            <height>34</height>
           </rect>
          </property>
          <property name="text">
-          <string>Set Values</string>
+          <string>Scan</string>
          </property>
         </widget>
-        <widget class="QLabel" name="scanAmplitudeLabel">
-         <property name="geometry">
-          <rect>
-           <x>10</x>
-           <y>20</y>
-           <width>131</width>
-           <height>25</height>
-          </rect>
-         </property>
-         <property name="text">
-          <string>Amplitude [V]</string>
-         </property>
-        </widget>
-        <widget class="QLabel" name="scanOffsetLabel">
-         <property name="geometry">
-          <rect>
-           <x>10</x>
-           <y>50</y>
-           <width>131</width>
-           <height>25</height>
-          </rect>
-         </property>
-         <property name="text">
-          <string>Offset [V]</string>
-         </property>
-        </widget>
-        <widget class="QLabel" name="scanFrequencyLabel">
-         <property name="geometry">
-          <rect>
-           <x>10</x>
-           <y>80</y>
-           <width>131</width>
-           <height>25</height>
-          </rect>
-         </property>
-         <property name="text">
-          <string>Frequency [Hz]</string>
-         </property>
-        </widget>
-        <widget class="QLabel" name="scanWaveformLabel">
-         <property name="geometry">
-          <rect>
-           <x>10</x>
-           <y>110</y>
-           <width>131</width>
-           <height>25</height>
-          </rect>
-         </property>
-         <property name="text">
-          <string>Shape</string>
-         </property>
-        </widget>
-        <widget class="QComboBox" name="scanWaveform">
-         <property name="geometry">
-          <rect>
-           <x>130</x>
-           <y>110</y>
-           <width>110</width>
-           <height>25</height>
-          </rect>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>25</height>
-          </size>
-         </property>
-         <property name="currentIndex">
-          <number>3</number>
-         </property>
-         <item>
-          <property name="text">
-           <string>Sine</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Square</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Triangle</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Ramp Up</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Ramp Down</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>DC Voltage</string>
-          </property>
-         </item>
-        </widget>
-        <widget class="QDoubleSpinBox" name="scanAmplitude">
-         <property name="geometry">
-          <rect>
-           <x>150</x>
-           <y>20</y>
-           <width>90</width>
-           <height>25</height>
-          </rect>
-         </property>
-         <property name="decimals">
-          <number>3</number>
-         </property>
-         <property name="singleStep">
-          <double>0.500000000000000</double>
-         </property>
-        </widget>
-        <widget class="QDoubleSpinBox" name="scanOffset">
+        <widget class="QDoubleSpinBox" name="scanEnd">
          <property name="geometry">
           <rect>
            <x>150</x>
@@ -223,55 +106,87 @@
           <number>3</number>
          </property>
          <property name="minimum">
-          <double>-2.000000000000000</double>
+          <double>0.000000000000000</double>
          </property>
          <property name="maximum">
-          <double>2.000000000000000</double>
+          <double>20.000000000000000</double>
          </property>
          <property name="singleStep">
           <double>0.100000000000000</double>
          </property>
+         <property name="value">
+          <double>7.000000000000000</double>
+         </property>
         </widget>
-        <widget class="QDoubleSpinBox" name="scanFrequency">
+        <widget class="QLabel" name="scanStartLabel">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>20</y>
+           <width>131</width>
+           <height>25</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Start [V]</string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="scanEndLabel">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>50</y>
+           <width>131</width>
+           <height>25</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>End [V]</string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="scanIntervalLabel">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>110</y>
+           <width>131</width>
+           <height>25</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Time between steps [s]</string>
+         </property>
+        </widget>
+        <widget class="QDoubleSpinBox" name="scanStart">
          <property name="geometry">
           <rect>
            <x>150</x>
-           <y>80</y>
+           <y>20</y>
            <width>90</width>
            <height>25</height>
           </rect>
          </property>
+         <property name="decimals">
+          <number>3</number>
+         </property>
          <property name="minimum">
-          <double>1.000000000000000</double>
+          <double>0.000000000000000</double>
          </property>
          <property name="maximum">
-          <double>10000.000000000000000</double>
+          <double>20.000000000000000</double>
          </property>
          <property name="singleStep">
-          <double>10.000000000000000</double>
-         </property>
-         <property name="value">
           <double>1.000000000000000</double>
          </property>
-        </widget>
-        <widget class="QPushButton" name="scanButtonManual">
-         <property name="geometry">
-          <rect>
-           <x>10</x>
-           <y>170</y>
-           <width>110</width>
-           <height>34</height>
-          </rect>
-         </property>
-         <property name="text">
-          <string>Manual Scan</string>
+         <property name="value">
+          <double>0.000000000000000</double>
          </property>
         </widget>
         <widget class="QLabel" name="scanStepsLabel">
          <property name="geometry">
           <rect>
            <x>10</x>
-           <y>140</y>
+           <y>80</y>
            <width>131</width>
            <height>25</height>
           </rect>
@@ -284,19 +199,44 @@
          <property name="geometry">
           <rect>
            <x>150</x>
-           <y>140</y>
+           <y>80</y>
            <width>90</width>
            <height>25</height>
           </rect>
          </property>
          <property name="minimum">
-          <number>1</number>
+          <number>2</number>
          </property>
          <property name="maximum">
-          <number>500</number>
+          <number>10000</number>
          </property>
          <property name="value">
-          <number>100</number>
+          <number>1000</number>
+         </property>
+        </widget>
+        <widget class="QDoubleSpinBox" name="scanInterval">
+         <property name="geometry">
+          <rect>
+           <x>150</x>
+           <y>110</y>
+           <width>90</width>
+           <height>25</height>
+          </rect>
+         </property>
+         <property name="decimals">
+          <number>2</number>
+         </property>
+         <property name="minimum">
+          <double>0.010000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>10.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.100000000000000</double>
+         </property>
+         <property name="value">
+          <double>0.100000000000000</double>
          </property>
         </widget>
        </widget>
@@ -304,7 +244,7 @@
         <property name="geometry">
          <rect>
           <x>10</x>
-          <y>530</y>
+          <y>500</y>
           <width>250</width>
           <height>211</height>
          </rect>
@@ -920,7 +860,7 @@
         <property name="geometry">
          <rect>
           <x>10</x>
-          <y>750</y>
+          <y>720</y>
           <width>250</width>
           <height>111</height>
          </rect>
@@ -1016,6 +956,9 @@
          </property>
          <property name="text">
           <string/>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
          </property>
         </widget>
         <widget class="QLabel" name="incrementVoltageLabel">
@@ -1162,7 +1105,7 @@
      <x>0</x>
      <y>0</y>
      <width>1335</width>
-     <height>31</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFiles">
@@ -1178,9 +1121,9 @@
     <property name="title">
      <string>Device</string>
     </property>
-    <addaction name="actionConnect"/>
-    <addaction name="actionDisconnect"/>
-    <addaction name="actionSettings"/>
+    <addaction name="actionConnect_DAQ"/>
+    <addaction name="actionDisconnect_DAQ"/>
+    <addaction name="actionSettings_DAQ"/>
     <addaction name="separator"/>
     <addaction name="actionConnect_Piezo"/>
     <addaction name="actionDisconnect_Piezo"/>
@@ -1211,12 +1154,12 @@
     <string>Quit</string>
    </property>
   </action>
-  <action name="actionConnect">
+  <action name="actionConnect_DAQ">
    <property name="text">
     <string>Connect</string>
    </property>
   </action>
-  <action name="actionDisconnect">
+  <action name="actionDisconnect_DAQ">
    <property name="enabled">
     <bool>false</bool>
    </property>
@@ -1224,7 +1167,7 @@
     <string>Disconnect</string>
    </property>
   </action>
-  <action name="actionSettings">
+  <action name="actionSettings_DAQ">
    <property name="text">
     <string>Settings</string>
    </property>

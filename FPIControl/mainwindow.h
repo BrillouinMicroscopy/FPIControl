@@ -6,7 +6,11 @@
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QChart>
 
-#include "daq.h"
+#include "DAQ_PS2000.h"
+#include "DAQ_PS2000A.h"
+#include "locking.h"
+#include "kcubepiezo.h"
+#include "thread.h"
 
 namespace Ui {
 	class MainWindow;
@@ -72,6 +76,16 @@ typedef struct {
 	AXIS_RANGE scanView;
 } VIEW_SETTINGS;
 
+typedef enum enViews {
+	LIVE,
+	LOCK,
+	SCAN
+} VIEWS;
+
+Q_DECLARE_METATYPE(ACQUISITION_PARAMETERS);
+Q_DECLARE_METATYPE(LOCKSTATE);
+Q_DECLARE_METATYPE(PIEZO_SETTINGS);
+
 class MainWindow : public QMainWindow {
 	Q_OBJECT
 
@@ -80,18 +94,25 @@ public:
     ~MainWindow();
 
 private slots:
+	void on_actionQuit_triggered();
 	void on_selectDisplay_activated(const int index);
 	void on_floatingViewCheckBox_clicked(const bool checked);
+
+	void showAcqRunning(bool);
+	void showScanRunning(bool);
 
 	void on_acquisitionButton_clicked();
 	void on_lockButton_clicked();
 	void on_acquireLockButton_clicked();
-	void on_actionConnect_triggered();
-	void on_actionDisconnect_triggered();
+	void showAcquireLockingRunning(bool running);
+
+	void on_actionConnect_DAQ_triggered();
+	void on_actionDisconnect_DAQ_triggered();
 	void on_actionConnect_Piezo_triggered();
 	void on_actionDisconnect_Piezo_triggered();
+
 	void on_scanButton_clicked();
-	void on_scanButtonManual_clicked();
+
 	// SLOTS for setting the acquisitionParameters
 	void on_sampleRate_activated(const int index);
 	void on_chACoupling_activated(const int index);
@@ -100,10 +121,9 @@ private slots:
 	void on_chBRange_activated(const int index);
 	void on_sampleNumber_valueChanged(const int no_of_samples);
 	// SLOTS for setting the scanParameters
-	void on_scanAmplitude_valueChanged(const double value);
-	void on_scanOffset_valueChanged(const double value);
-	void on_scanWaveform_activated(const int index);
-	void on_scanFrequency_valueChanged(const double value);
+	void on_scanStart_valueChanged(const double value);
+	void on_scanEnd_valueChanged(const double value);
+	void on_scanInterval_valueChanged(const double value);
 	void on_scanSteps_valueChanged(const int value);
 
 	void on_proportionalTerm_valueChanged(const double value);
@@ -118,9 +138,9 @@ private slots:
 	void on_offsetCheckBox_clicked(const bool checked);
 
 	// SLOTS for updating the plots
-	void updateLiveView(std::array<QVector<QPointF>, PS2000_MAX_CHANNELS> &data);
+	void updateLiveView();
 	void updateScanView();
-	void updateLockView(std::array<QVector<QPointF>, static_cast<int>(lockViewPlotTypes::COUNT)> &data);
+	void updateLockView();
 
 	// SLOTS for updating the acquisition parameters
 	void updateAcquisitionParameters(ACQUISITION_PARAMETERS acquisitionParameters);
@@ -133,20 +153,41 @@ private slots:
 
 	void on_actionAbout_triggered();
 
+	void on_actionSettings_DAQ_triggered();
+	void closeSettings();
+	void initSettingsDialog();
+
+	void selectDAQ(int index);
+
+	void piezoConnectionChanged(bool connected);
+	void updatePiezoSettings(PIEZO_SETTINGS);
+	void daqConnectionChanged(bool connected);
+
 public slots:
 	void connectMarkers();
 	void handleMarkerClicked();
 
 private:
+	PS_TYPES m_daqType = PS_TYPES::MODEL_PS2000A;
+	void initDAQ();
+	void updateSamplingRates();
+	std::string getSamplingRateString(double samplingRate);
+	QDialog *settingsDialog = nullptr;
+	bool m_isDAQConnected = false;
+	bool m_isPiezoConnected = false;
+
     Ui::MainWindow *ui;
+	Thread m_acquisitionThread;
 	QtCharts::QChart *liveViewChart;
 	QtCharts::QChart *lockViewChart;
 	QtCharts::QChart *scanViewChart;
 	QVector<QtCharts::QLineSeries *> liveViewPlots;
 	QVector<QtCharts::QLineSeries *> lockViewPlots;
 	QVector<QtCharts::QLineSeries *> scanViewPlots;
-	daq d;
-	int view = 0;	// selection of the view
+	daq *m_dataAcquisition = nullptr;
+	kcubepiezo *m_piezoControl = new kcubepiezo();
+	Locking *m_lockingControl = new Locking(nullptr, &m_dataAcquisition, m_piezoControl);
+	VIEWS m_selectedView = VIEWS::LIVE;	// selection of the view
 	IndicatorWidget *lockIndicator;
 	QLabel *compensationIndicator;
 	QLabel *lockInfo;

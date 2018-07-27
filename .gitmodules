@@ -1,0 +1,3 @@
+[submodule "FPIControl/external/gsl"]
+	path = FPIControl/external/gsl
+	url = https://github.com/Microsoft/GSL.git
