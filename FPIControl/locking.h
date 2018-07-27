@@ -24,8 +24,9 @@ typedef struct {
 typedef struct {
 	bool m_running = false;				// is the scan currently running
 	bool m_abort = false;				// should the scan be aborted
-	int32_t nrSteps = 0;
-	std::vector<int32_t> voltages;	// [µV] output voltage (<int32_t> is sufficient for this)
+	int32_t nrSteps{ 0 };
+	int pass{ 0 };
+	std::vector<double> voltages;	// [µV] output voltage (<int32_t> is sufficient for this)
 	std::vector<int32_t> intensity;	// [µV] measured intensity (<int32_t> is fine)
 	std::vector<double> error;		// PDH error signal
 } SCAN_DATA;

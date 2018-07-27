@@ -103,74 +103,73 @@ void Locking::startScan() {
 		scanTimer->stop();
 		emit s_scanRunning(scanData.m_running);
 	} else {
-		//// prepare data arrays
-		//scanData.nrSteps = scanSettings.nrSteps;
-		//scanData.temperatures = generalmath::linspace<double>(scanSettings.low, scanSettings.high, scanSettings.nrSteps);
+		// prepare data arrays
+		scanData.nrSteps = scanSettings.nrSteps;
+		scanData.voltages = generalmath::linspace<double>(scanSettings.low, scanSettings.high, scanSettings.nrSteps);
 
-		//scanData.reference.resize(scanSettings.nrSteps);
-		//scanData.absorption.resize(scanSettings.nrSteps);
-		//scanData.quotient.resize(scanSettings.nrSteps);
-		//scanData.transmission.resize(scanSettings.nrSteps);
-		//std::fill(scanData.reference.begin(), scanData.reference.end(), NAN);
-		//std::fill(scanData.absorption.begin(), scanData.absorption.end(), NAN);
-		//std::fill(scanData.quotient.begin(), scanData.quotient.end(), NAN);
-		//std::fill(scanData.transmission.begin(), scanData.transmission.end(), NAN);
+		scanData.intensity.resize(scanSettings.nrSteps);
+		scanData.error.resize(scanSettings.nrSteps);
+		std::fill(scanData.intensity.begin(), scanData.intensity.end(), NAN);
+		std::fill(scanData.error.begin(), scanData.error.end(), NAN);
 
-		//(*m_dataAcquisition)->setAcquisitionParameters();
+		(*m_dataAcquisition)->setAcquisitionParameters();
 
-		//scanData.pass = 0;
-		//scanData.m_running = true;
-		//scanData.m_abort = false;
-		//// set laser temperature to start value
-		//m_laserControl->setTemperatureForce(scanData.temperatures[scanData.pass]);
-		//passTimer.start();
-		//scanTimer->start(1000);
-		//emit s_scanRunning(scanData.m_running);
+		scanData.pass = 0;
+		scanData.m_running = true;
+		scanData.m_abort = false;
+		// set piezo voltage to start value
+		m_piezoControl->setVoltage(scanData.voltages[scanData.pass]);
+		passTimer.start();
+		scanTimer->start(1000);
+		emit s_scanRunning(scanData.m_running);
 	}
 }
 
 void Locking::scan() {
-	// abort scan if wanted
-	//if (scanData.m_abort) {
-	//	scanData.m_running = false;
-	//	scanTimer->stop();
-	//	emit s_scanRunning(scanData.m_running);
-	//}
+	//abort scan if wanted
+	if (scanData.m_abort) {
+		scanData.m_running = false;
+		scanTimer->stop();
+		emit s_scanRunning(scanData.m_running);
+	}
 
-	//// acquire new datapoint when interval has passed
-	//if (passTimer.elapsed() < (scanSettings.interval*1e3)) {
-	//	return;
-	//}
+	// acquire new datapoint when interval has passed
+	if (passTimer.elapsed() < (scanSettings.interval*1e3)) {
+		return;
+	}
 
-	//// reset timer when enough time has passed
-	//passTimer.start();
+	// reset timer when enough time has passed
+	passTimer.start();
 
-	//// acquire detector and reference signal, store and process it
-	//std::array<std::vector<int32_t>, DAQ_MAX_CHANNELS> values = (*m_dataAcquisition)->collectBlockData();
+	// acquire detector and reference signal, store and process it
+	std::array<std::vector<int32_t>, DAQ_MAX_CHANNELS> values = (*m_dataAcquisition)->collectBlockData();
 
-	//double absorption_mean = generalmath::mean(values[0]) / 1e3;
-	//double reference_mean = generalmath::mean(values[1]) / 1e3;
-	//double quotient_mean = abs(absorption_mean / reference_mean);
+	std::vector<double> tau(values[0].begin(), values[0].end());
+	std::vector<double> reference(values[1].begin(), values[1].end());
 
-	//scanData.absorption[scanData.pass] = absorption_mean;
-	//scanData.reference[scanData.pass] = reference_mean;
-	//scanData.quotient[scanData.pass] = quotient_mean;
+	double tau_max = generalmath::max(tau);
+	double tau_min = generalmath::min(tau);
 
-	//double quotient_max = generalmath::max(scanData.quotient);
+	// normalize transmission signal
+	std::transform(tau.begin(), tau.end(), tau.begin(),
+		[tau_max, tau_min](double &el) {
+			return (el - tau_min) / (tau_max - tau_min);
+		}
+	);
 
-	//scanData.transmission = scanData.quotient;
-	//std::for_each(scanData.transmission.begin(), scanData.transmission.end(), [quotient_max](double &el) {el /= quotient_max; });
+	scanData.intensity[scanData.pass] = generalmath::absSum(tau);
+	scanData.error[scanData.pass] = pdh.getError(tau, reference);
 
-	//++scanData.pass;
-	//emit s_scanPassAcquired();
-	//// if scan is not done, set temperature to new value, else annouce finished scan
-	//if (scanData.pass < scanData.nrSteps) {
-	//	m_laserControl->setTemperatureForce(scanData.temperatures[scanData.pass]);
-	//} else {
-	//	scanData.m_running = false;
-	//	scanTimer->stop();
-	//	emit s_scanRunning(scanData.m_running);
-	//}
+	++scanData.pass;
+	emit s_scanPassAcquired();
+	// if scan is not done, set temperature to new value, else annouce finished scan
+	if (scanData.pass < scanData.nrSteps) {
+		m_piezoControl->setVoltage(scanData.voltages[scanData.pass]);
+	} else {
+		scanData.m_running = false;
+		scanTimer->stop();
+		emit s_scanRunning(scanData.m_running);
+	}
 }
 
 LOCK_SETTINGS Locking::getLockSettings() {
