@@ -16,7 +16,7 @@
 #include <QtCharts/QXYLegendMarker>
 #include "version.h"
 
-MainWindow::MainWindow(QWidget *parent) :
+MainWindow::MainWindow(QWidget *parent) noexcept :
     QMainWindow(parent),
     ui(new Ui::MainWindow) {
 
@@ -440,20 +440,21 @@ void MainWindow::selectDAQ(int index) {
 
 void MainWindow::connectMarkers() {
 	// Connect all markers to handler
+	QMetaObject::Connection connection;
 	foreach(QtCharts::QLegendMarker* marker, liveViewChart->legend()->markers()) {
 		// Disconnect possible existing connection to avoid multiple connections
 		QWidget::disconnect(marker, SIGNAL(clicked()), this, SLOT(handleMarkerClicked()));
-		QWidget::connect(marker, SIGNAL(clicked()), this, SLOT(handleMarkerClicked()));
+		connection = QWidget::connect(marker, SIGNAL(clicked()), this, SLOT(handleMarkerClicked()));
 	}
 	foreach(QtCharts::QLegendMarker* marker, lockViewChart->legend()->markers()) {
 		// Disconnect possible existing connection to avoid multiple connections
 		QWidget::disconnect(marker, SIGNAL(clicked()), this, SLOT(handleMarkerClicked()));
-		QWidget::connect(marker, SIGNAL(clicked()), this, SLOT(handleMarkerClicked()));
+		connection = QWidget::connect(marker, SIGNAL(clicked()), this, SLOT(handleMarkerClicked()));
 	}
 	foreach(QtCharts::QLegendMarker* marker, scanViewChart->legend()->markers()) {
 		// Disconnect possible existing connection to avoid multiple connections
 		QWidget::disconnect(marker, SIGNAL(clicked()), this, SLOT(handleMarkerClicked()));
-		QWidget::connect(marker, SIGNAL(clicked()), this, SLOT(handleMarkerClicked()));
+		connection = QWidget::connect(marker, SIGNAL(clicked()), this, SLOT(handleMarkerClicked()));
 	}
 }
 

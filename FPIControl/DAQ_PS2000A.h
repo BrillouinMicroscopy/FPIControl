@@ -53,7 +53,7 @@ class daq_PS2000A : public daq {
 
 		int m_defaultTimebaseIndex = 12;
 
-		int16_t buffers[PS2000A_MAX_CHANNEL_BUFFERS][DAQ_BUFFER_SIZE * sizeof(int16_t)];
+		int16_t buffers[PS2000A_MAX_CHANNEL_BUFFERS][DAQ_BUFFER_SIZE * sizeof(int16_t)]{ 0 };
 };
 
 #endif // DAQ_PS2000A_H

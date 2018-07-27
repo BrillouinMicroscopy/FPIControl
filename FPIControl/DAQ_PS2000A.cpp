@@ -18,7 +18,7 @@ daq_PS2000A::daq_PS2000A(QObject *parent) :
 			if (timebase < 3) {
 				return this->m_maxSamplingRate / pow(2, timebase);
 			} else {
-				return this->m_maxSamplingRate / (8 * (timebase - 2));
+				return this->m_maxSamplingRate / (8 * ((double)timebase - 2));
 			}
 		}
 	);
