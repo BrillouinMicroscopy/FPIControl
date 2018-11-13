@@ -218,7 +218,7 @@ MainWindow::MainWindow(QWidget *parent) noexcept :
 	/* Add labels and indicator to status bar */
 	// Status info
 	statusInfo = new QLabel("");
-	statusInfo->setAlignment(Qt::AlignLeft);
+	statusInfo->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
 	ui->statusBar->addPermanentWidget(statusInfo, 1);
 
 	// Compensating info
@@ -237,17 +237,18 @@ MainWindow::MainWindow(QWidget *parent) noexcept :
 
 	// Locking info
 	lockInfo = new QLabel("Locking Inactive");
-	lockInfo->setAlignment(Qt::AlignRight);
+	lockInfo->setAlignment(Qt::AlignVCenter | Qt::AlignRight);
+	lockInfo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 	ui->statusBar->addPermanentWidget(lockInfo, 0);
 
 	// Locking indicator
 	lockIndicator = new IndicatorWidget();
 	lockIndicator->turnOn();
-	lockIndicator->setMinimumSize(26, 24);
+	lockIndicator->setMinimumSize(20, 18);
 	ui->statusBar->addPermanentWidget(lockIndicator, 0);
 
 	// style status bar to not show items borders
-	ui->statusBar->setStyleSheet(QString("QStatusBar::item { border: none; }"));
+	ui->statusBar->setStyleSheet(QString("QLabel { margin-left: 8px; } QStatusBar::item { border: none; }"));
 
 	// hide floating view elements by default
 	ui->floatingViewLabel->hide();

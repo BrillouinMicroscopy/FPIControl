@@ -43,7 +43,7 @@ protected:
 		QPainter painter(this);
 		painter.setRenderHint(QPainter::Antialiasing);
 		painter.setBrush(m_color);
-		painter.drawEllipse(2, 2, 20, 20);
+		painter.drawEllipse(2, 3, 12, 12);
 	}
 
 private:
