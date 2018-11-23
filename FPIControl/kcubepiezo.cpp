@@ -38,12 +38,13 @@ void kcubepiezo::setDefaults() {
 	} else {
 		disable();
 	}
-	settingsChanged(defaultSettings);
+	restoreOutputVoltageIncrement();
+	emit(settingsChanged(defaultSettings));
 }
 
 double kcubepiezo::getVoltage() {
 	double maxVoltage = PCC_GetMaxOutputVoltage(serialNo);
-	double relativeVoltage = PCC_GetOutputVoltage(serialNo);
+	double relativeVoltage = getVoltageIncrement();
 	return maxVoltage * relativeVoltage / (pow(2, 15) - 1) / 10;	// [V] output voltage
 }
 
@@ -54,20 +55,21 @@ void kcubepiezo::setVoltageSource(PZ_InputSourceFlags source) {
 void kcubepiezo::setVoltage(double voltage) {
 	double maxVoltage = PCC_GetMaxOutputVoltage(serialNo);
 	double relativeVoltage = voltage / maxVoltage * (pow(2, 15) - 1) * 10;
-	PCC_SetOutputVoltage(serialNo, (int)relativeVoltage);
+	m_outputVoltageIncrement = (int)relativeVoltage;
+	PCC_SetOutputVoltage(serialNo, (int)m_outputVoltageIncrement);
 }
 
 void kcubepiezo::incrementVoltage(int direction) {
-	outputVoltageIncrement += direction;
-	PCC_SetOutputVoltage(serialNo, outputVoltageIncrement);
+	m_outputVoltageIncrement += direction;
+	PCC_SetOutputVoltage(serialNo, m_outputVoltageIncrement);
 }
 
 void kcubepiezo::storeOutputVoltageIncrement() {
-	outputVoltageIncrement = getVoltageIncrement();
+	//m_outputVoltageIncrement = getVoltageIncrement();
 }
 
 void kcubepiezo::restoreOutputVoltageIncrement() {
-	PCC_SetOutputVoltage(serialNo, outputVoltageIncrement);
+	PCC_SetOutputVoltage(serialNo, m_outputVoltageIncrement);
 }
 
 void kcubepiezo::setVoltageIncrement(int voltage) {
@@ -75,5 +77,6 @@ void kcubepiezo::setVoltageIncrement(int voltage) {
 }
 
 int kcubepiezo::getVoltageIncrement() {
-	return PCC_GetOutputVoltage(serialNo);
+	return m_outputVoltageIncrement;
+	//return PCC_GetOutputVoltage(serialNo);
 }

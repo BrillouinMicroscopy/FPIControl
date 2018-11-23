@@ -142,9 +142,9 @@ class Locking : public QObject {
 		LOCK_SETTINGS lockSettings;
 		LOCK_DATA lockData;
 
-		double daqVoltage = 0;
-		double piezoVoltage = 0;
-		int compensationTimer = 0;
+		double m_daqVoltage{ 0 };
+		double m_piezoVoltage{ 0 };
+		int m_compensationTimer{ 0 };
 		
 		void Locking::disableLocking(LOCKSTATE lockstate);
 };

@@ -24,12 +24,12 @@ void Locking::startStopLocking() {
 		// set integral error to zero before starting to lock
 		lockData.iError = 0;
 		// store and immediately restore output voltage
-		m_piezoControl->storeOutputVoltageIncrement();
+		//m_piezoControl->storeOutputVoltageIncrement();
 		// this is necessary, because it seems, that getting the output voltage takes the external signal into account
 		// whereas setting it does not
-		m_piezoControl->restoreOutputVoltageIncrement();
+		//m_piezoControl->restoreOutputVoltageIncrement();
 		m_piezoControl->setVoltageSource(PZ_InputSourceFlags::PZ_ExternalSignal);
-		piezoVoltage = m_piezoControl->getVoltage();
+		m_piezoVoltage = m_piezoControl->getVoltage();
 		setLockState(LOCKSTATE::ACTIVE);
 	} else {
 		disableLocking(LOCKSTATE::INACTIVE);
@@ -41,10 +41,10 @@ void Locking::toggleOffsetCompensation(bool compensate) {
 }
 
 void Locking::disableLocking(LOCKSTATE lockstate) {
-	m_piezoControl->setVoltageSource(PZ_InputSourceFlags::PZ_Potentiometer);
-	daqVoltage = 0;
+	m_piezoControl->setVoltageSource(PZ_InputSourceFlags::PZ_ExternalSignal);
+	m_daqVoltage = 0;
 	// set output voltage of the DAQ
-	(*m_dataAcquisition)->setOutputVoltage(daqVoltage);
+	(*m_dataAcquisition)->setOutputVoltage(m_daqVoltage);
 	lockSettings.compensating = false;
 	emit(compensationStateChanged(false));
 	
@@ -220,28 +220,28 @@ void Locking::lock() {
 			lockData.iError += lockSettings.integral * (lockData.error.back() + error) * (dt) / 2;
 			dError = (error - lockData.error.back()) / dt;
 		}
-		daqVoltage += (lockSettings.proportional * error + lockData.iError + lockSettings.derivative * dError) / 100;
+		m_daqVoltage += (lockSettings.proportional * error + lockData.iError + lockSettings.derivative * dError) / 100;
 
 		// check if offset compensation is necessary and set piezo voltage
 		if (lockSettings.compensate) {
-			compensationTimer++;
-			if (abs(daqVoltage) > lockSettings.maxOffset) {
+			m_compensationTimer++;
+			if (abs(m_daqVoltage) > lockSettings.maxOffset) {
 				lockSettings.compensating = true;
 				emit(compensationStateChanged(true));
 			}
-			if (abs(daqVoltage) < lockSettings.targetOffset) {
+			if (abs(m_daqVoltage) < lockSettings.targetOffset) {
 				lockSettings.compensating = false;
 				emit(compensationStateChanged(false));
 			}
-			if (lockSettings.compensating & (compensationTimer > 50)) {
-				compensationTimer = 0;
-				if (daqVoltage > 0) {
+			if (lockSettings.compensating & (m_compensationTimer > 50)) {
+				m_compensationTimer = 0;
+				if (m_daqVoltage > 0) {
 					m_piezoControl->incrementVoltage(1);
-					piezoVoltage = m_piezoControl->getVoltage();
+					m_piezoVoltage = m_piezoControl->getVoltage();
 				}
 				else {
 					m_piezoControl->incrementVoltage(-1);
-					piezoVoltage = m_piezoControl->getVoltage();
+					m_piezoVoltage = m_piezoControl->getVoltage();
 				}
 			}
 		}
@@ -253,25 +253,25 @@ void Locking::lock() {
 		// abort locking if
 		// - output voltage is over 2 V
 		// - maximum of the signal amplitude in the last 50 measurements is below 0.05 V
-		if ((abs(daqVoltage) > 2) || (generalmath::floatingMax(lockData.amplitude, 50) / static_cast<double>(1000) < 0.05)) {
+		if ((abs(m_daqVoltage) > 2) || (generalmath::floatingMax(lockData.amplitude, 50) / static_cast<double>(1000) < 0.05)) {
 			Locking::disableLocking(LOCKSTATE::FAILURE);
 		}
 
 		// set output voltage of the DAQ
-		(*m_dataAcquisition)->setOutputVoltage(daqVoltage);
+		(*m_dataAcquisition)->setOutputVoltage(m_daqVoltage);
 	}
 
 	// write data to struct for storage
 	lockData.time.push_back(now);
 	lockData.error.push_back(error);
-	lockData.voltage.push_back(daqVoltage);
+	lockData.voltage.push_back(m_daqVoltage);
 
 	double passed = std::chrono::duration_cast<std::chrono::milliseconds>(now - lockData.time[0]).count() / 1e3;	// store passed time in seconds
 
-	m_lockDataPlot[static_cast<int>(lockViewPlotTypes::VOLTAGE)].append(QPointF(passed, daqVoltage));
+	m_lockDataPlot[static_cast<int>(lockViewPlotTypes::VOLTAGE)].append(QPointF(passed, m_daqVoltage));
 	m_lockDataPlot[static_cast<int>(lockViewPlotTypes::ERRORSIGNAL)].append(QPointF(passed, error / 100));
 	m_lockDataPlot[static_cast<int>(lockViewPlotTypes::AMPLITUDE)].append(QPointF(passed, amplitude / static_cast<double>(1000)));
-	m_lockDataPlot[static_cast<int>(lockViewPlotTypes::PIEZOVOLTAGE)].append(QPointF(passed, piezoVoltage));
+	m_lockDataPlot[static_cast<int>(lockViewPlotTypes::PIEZOVOLTAGE)].append(QPointF(passed, m_piezoVoltage));
 	m_lockDataPlot[static_cast<int>(lockViewPlotTypes::ERRORSIGNALMEAN)].append(QPointF(passed, generalmath::floatingMean(lockData.error, 50) / 100));
 	m_lockDataPlot[static_cast<int>(lockViewPlotTypes::ERRORSIGNALSTD)].append(QPointF(passed, generalmath::floatingStandardDeviation(lockData.error, 50) / 100));
 

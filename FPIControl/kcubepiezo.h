@@ -9,10 +9,10 @@
 #include <cmath>
 
 typedef struct {
-	short maxVoltage = 750;												// maximum output voltage
-	PZ_InputSourceFlags source = PZ_InputSourceFlags::PZ_Potentiometer;	// voltage input source
-	PZ_ControlModeTypes mode = PZ_ControlModeTypes::PZ_OpenLoop;		// mode type
-	bool enabled = true;
+	short maxVoltage{ 750 };											// maximum output voltage
+	PZ_InputSourceFlags source{ PZ_InputSourceFlags::PZ_Potentiometer };// voltage input source
+	PZ_ControlModeTypes mode{ PZ_ControlModeTypes::PZ_OpenLoop };		// mode type
+	bool enabled{ true };
 } PIEZO_SETTINGS;
 
 class kcubepiezo : public QObject {
@@ -29,14 +29,14 @@ public:
 	void storeOutputVoltageIncrement();
 	void restoreOutputVoltageIncrement();
 
-	char const * serialNo = "29501039";	// serial number of the KCube Piezo device (can be found in Kinesis) TODO: make this a changeable parameter
+	char const * serialNo{ "29501039" };	// serial number of the KCube Piezo device (can be found in Kinesis) TODO: make this a changeable parameter
 
 	PIEZO_SETTINGS defaultSettings;
 
 private:
-	bool m_isConnected = false;
-	bool m_isEnabled = false;
-	int outputVoltageIncrement = 0;
+	bool m_isConnected{ false };
+	bool m_isEnabled{ false };
+	int m_outputVoltageIncrement{ 0 };
 
 public slots:
 	void connect_device();
