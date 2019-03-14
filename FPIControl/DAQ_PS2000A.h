@@ -43,6 +43,8 @@ class daq_PS2000A : public daq {
 		std::array<std::vector<int32_t>, DAQ_MAX_CHANNELS> collectBlockData();
 		void setOutputVoltage(double voltage);
 
+		double getCurrentSamplingRate() override;
+
 	public slots:
 		void connect_daq();
 		void disconnect_daq();

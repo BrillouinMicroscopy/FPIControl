@@ -99,6 +99,8 @@ class daq : public QObject {
 
 		std::vector<double> getSamplingRates();
 
+		virtual double getCurrentSamplingRate() = 0;
+
 	public slots:
 		virtual void connect_daq() = 0;
 		virtual void disconnect_daq() = 0;

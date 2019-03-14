@@ -197,7 +197,7 @@ void Locking::lock() {
 
 	// adjust for requested phase
 	ACQUISITION_PARAMETERS acquisitionParameters = (*m_dataAcquisition)->getAcquisitionParameters();
-	double samplingRate = 200e6 / pow(2, acquisitionParameters.timebase);
+	double samplingRate = (*m_dataAcquisition)->getCurrentSamplingRate();
 	int phaseStep = (int)lockSettings.phase * samplingRate / (360 * lockSettings.frequency);
 	if (phaseStep > 0) {
 		// simple rotation to the left
@@ -253,7 +253,8 @@ void Locking::lock() {
 		// abort locking if
 		// - output voltage is over 2 V
 		// - maximum of the signal amplitude in the last 50 measurements is below 0.05 V
-		if ((abs(m_daqVoltage) > 2) || (generalmath::floatingMax(lockData.amplitude, 50) / static_cast<double>(1000) < 0.05)) {
+		if ((abs(m_daqVoltage) > 2)) {
+		//if ((abs(m_daqVoltage) > 2) || (generalmath::floatingMax(lockData.amplitude, 50) / static_cast<double>(1000) < 0.05)) {
 			Locking::disableLocking(LOCKSTATE::FAILURE);
 		}
 

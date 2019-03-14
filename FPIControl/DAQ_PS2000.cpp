@@ -124,6 +124,10 @@ void daq_PS2000::setOutputVoltage(double voltage) {
 	);
 }
 
+double daq_PS2000::getCurrentSamplingRate() {
+	return this->m_maxSamplingRate / pow(2, m_acquisitionParameters.timebase);
+}
+
 /****************************************************************************
 * set_defaults - restore default settings
 ****************************************************************************/
