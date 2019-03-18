@@ -38,9 +38,9 @@ typedef enum enLockState {
 } LOCKSTATE;
 
 typedef struct {
-	double proportional = 0.01;		//		control parameter of the proportional part
-	double integral = 0.005;		//		control parameter of the integral part
-	double derivative = 0.0;		//		control parameter of the derivative part
+	double proportional = 10;		//		control parameter of the proportional part
+	double integral = 5;			//		control parameter of the integral part
+	double derivative = 0;			//		control parameter of the derivative part
 	double frequency = 5000;		// [Hz] approx. frequency of the reference signal
 	double phase = 0;				// [°]	phase shift between reference and detector signal
 	bool compensate = true;			//		compensate the offset?

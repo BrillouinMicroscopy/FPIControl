@@ -217,10 +217,10 @@ void Locking::lock() {
 		double dError = 0;
 		if (lockData.error.size() > 0) {
 			double dt = std::chrono::duration_cast<std::chrono::milliseconds>(now - lockData.time.back()).count() / 1e3;
-			lockData.iError += lockSettings.integral * (lockData.error.back() + error) * (dt) / 2;
+			lockData.iError += 1e-3 * lockSettings.integral * (lockData.error.back() + error) * (dt) / 2;
 			dError = (error - lockData.error.back()) / dt;
 		}
-		m_daqVoltage += (lockSettings.proportional * error + lockData.iError + lockSettings.derivative * dError) / 100;
+		m_daqVoltage += (1e-3 * lockSettings.proportional * error + lockData.iError + 1e-3 * lockSettings.derivative * dError) / 100;
 
 		// check if offset compensation is necessary and set piezo voltage
 		if (lockSettings.compensate) {
