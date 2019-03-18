@@ -70,7 +70,7 @@ typedef struct {
 	int16_t		timebase{ 0 };
 	int			timebaseIndex{ 0 };
 	DEFAULT_CHANNEL_SETTINGS channelSettings[2] = {
-		{PS_AC, 4, true},
+		{PS_AC, 2, true},
 		{PS_AC, 5, true}
 	};
 } ACQUISITION_PARAMETERS;
