@@ -64,7 +64,7 @@ void daq::setRange(int index, int ch) {
 void daq::getBlockData() {
 	std::array<std::vector<int32_t>, DAQ_MAX_CHANNELS> values = collectBlockData();
 
-	m_liveBuffer->m_freeBuffers->acquire();
+	//m_liveBuffer->m_freeBuffers->acquire();
 	int16_t **buffer = m_liveBuffer->getWriteBuffer();
 	for (gsl::index channel{ 0 }; channel < values.size(); channel++) {
 		for (gsl::index jj{ 0 }; jj < values[channel].size(); jj++) {
