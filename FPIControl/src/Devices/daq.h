@@ -10,8 +10,8 @@
 #include <ctime>
 
 #include <gsl/gsl>
-#include "circularBuffer.h"
-#include "generalmath.h"
+#include "..\circularBuffer.h"
+#include "..\generalmath.h"
 
 #define DAQ_BUFFER_SIZE 	8000
 #define SINGLE_CH_SCOPE 1				// Single channel scope

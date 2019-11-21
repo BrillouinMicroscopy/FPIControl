@@ -1,5 +1,5 @@
 #include "mainwindow.h"
-#include "daq.h"
+#include "Devices\daq.h"
 #include "ui_mainwindow.h"
 #include "colors.h"
 #include <QtWidgets>

@@ -6,10 +6,10 @@
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QChart>
 
-#include "DAQ_PS2000.h"
-#include "DAQ_PS2000A.h"
+#include "Devices\DAQ_PS2000.h"
+#include "Devices\DAQ_PS2000A.h"
 #include "locking.h"
-#include "kcubepiezo.h"
+#include "Devices\kcubepiezo.h"
 #include "thread.h"
 
 namespace Ui {

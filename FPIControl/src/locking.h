@@ -9,9 +9,9 @@
 #include <chrono>
 #include <ctime>
 
-#include "daq.h"
+#include "Devices\daq.h"
 #include "PDH.h"
-#include "kcubepiezo.h"
+#include "Devices\kcubepiezo.h"
 #include "generalmath.h"
 
 typedef struct {
