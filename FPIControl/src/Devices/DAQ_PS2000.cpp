@@ -3,6 +3,10 @@
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMainWindow>
 
+/*
+ * Public definitions
+ */
+
 daq_PS2000::daq_PS2000(QObject *parent) :
 	daq(parent,
 		{ 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000 },
@@ -128,22 +132,9 @@ double daq_PS2000::getCurrentSamplingRate() {
 	return this->m_maxSamplingRate / pow(2, m_acquisitionParameters.timebase);
 }
 
-/****************************************************************************
-* set_defaults - restore default settings
-****************************************************************************/
-void daq_PS2000::set_defaults(void) {
-	ps2000_set_ets(m_unitOpened.handle, PS2000_ETS_OFF, 0, 0);
-
-	for (gsl::index ch{ 0 }; ch < m_unitOpened.noOfChannels; ch++) {
-		ps2000_set_channel(
-			m_unitOpened.handle,
-			ch,
-			(int16_t)m_unitOpened.channelSettings[ch].enabled,
-			(int16_t)m_unitOpened.channelSettings[ch].coupling,
-			m_unitOpened.channelSettings[ch].range
-		);
-	}
-}
+/*
+ * Public slots
+ */
 
 void daq_PS2000::connect_daq() {
 	if (!m_isConnected) {
@@ -152,7 +143,8 @@ void daq_PS2000::connect_daq() {
 
 		if (!m_unitOpened.handle) {
 			m_isConnected = false;
-		} else {
+		}
+		else {
 			setAcquisitionParameters();
 			m_isConnected = true;
 		}
@@ -171,6 +163,27 @@ void daq_PS2000::disconnect_daq() {
 		m_isConnected = false;
 	}
 	emit(connected(m_isConnected));
+}
+
+/*
+ * Private definitions
+ */
+
+/****************************************************************************
+* set_defaults - restore default settings
+****************************************************************************/
+void daq_PS2000::set_defaults(void) {
+	ps2000_set_ets(m_unitOpened.handle, PS2000_ETS_OFF, 0, 0);
+
+	for (gsl::index ch{ 0 }; ch < m_unitOpened.noOfChannels; ch++) {
+		ps2000_set_channel(
+			m_unitOpened.handle,
+			ch,
+			(int16_t)m_unitOpened.channelSettings[ch].enabled,
+			(int16_t)m_unitOpened.channelSettings[ch].coupling,
+			m_unitOpened.channelSettings[ch].range
+		);
+	}
 }
 
 void daq_PS2000::get_info(void) {

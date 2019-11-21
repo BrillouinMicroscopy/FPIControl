@@ -24,8 +24,8 @@ private:
 	const int m_bufferNumber;
 	const int m_bufferLength;
 	const int m_bufferWidth;
-	unsigned int m_writeCount = 0;
-	unsigned int m_readCount = 0;
+	unsigned int m_writeCount{ 0 };
+	unsigned int m_readCount{ 0 };
 };
 
 template<class T>
@@ -50,12 +50,12 @@ inline CircularBuffer<T>::CircularBuffer(const int bufferNumber, const int buffe
 // make sure, UINT_MAX + 1 is evenly divisible by m_bufferNumber
 template<class T>
 inline int CircularBuffer<T>::checkBufferNumber(int bufferNumber) {
-	return pow(2,round(log2(bufferNumber)));
+	return pow(2, round(log2(bufferNumber)));
 }
 
 template<class T>
 inline CircularBuffer<T>::~CircularBuffer() {
-	for (gsl::index i = 0; i < m_bufferNumber; i++) {
+	for (gsl::index i{ 0 }; i < m_bufferNumber; i++) {
 		delete[] m_buffers[i];
 	}
 	delete[] m_buffers;

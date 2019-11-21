@@ -20,8 +20,8 @@ class kcubepiezo : public QObject {
 
 public:
 	void setDefaults();
-	double getVoltage();
 	void setVoltage(double voltage);
+	double getVoltage();
 	void setVoltageIncrement(int voltage);
 	int getVoltageIncrement();
 	void setVoltageSource(PZ_InputSourceFlags source);
@@ -33,17 +33,17 @@ public:
 
 	PIEZO_SETTINGS defaultSettings;
 
+public slots:
+	void init() {};
+	void connect_device();
+	void disconnect_device();
+	void enable();
+	void disable();
+
 private:
 	bool m_isConnected{ false };
 	bool m_isEnabled{ false };
 	int m_outputVoltageIncrement{ 0 };
-
-public slots:
-	void connect_device();
-	void disconnect_device();
-	void init() {};
-	void enable();
-	void disable();
 
 signals:
 	void connected(bool);

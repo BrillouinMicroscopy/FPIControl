@@ -32,7 +32,7 @@ typedef enum class PSTypes {
 typedef struct {
 	int coupling = PS_DC;
 	int16_t range{ 0 };
-	bool enabled = false;
+	bool enabled{ false };
 	int16_t values[DAQ_BUFFER_SIZE]{ 0 };
 } CHANNEL_SETTINGS;
 
@@ -54,9 +54,9 @@ typedef struct {
 } UNIT_MODEL;
 
 typedef struct {
-	int coupling = PS_AC;
+	int coupling{ PS_AC };
 	int16_t range{ 0 };
-	bool enabled = false;
+	bool enabled{ false };
 } DEFAULT_CHANNEL_SETTINGS;
 
 typedef struct {
@@ -81,15 +81,20 @@ class daq : public QObject {
 	public:
 		explicit daq(QObject *parent);
 		explicit daq(QObject *parent, std::vector<int32_t> ranges, std::vector<int> timebases, double maxSamplingRate);
+
 		virtual void setAcquisitionParameters() = 0;
-		ACQUISITION_PARAMETERS getAcquisitionParameters();
 		virtual std::array<std::vector<int32_t>, DAQ_MAX_CHANNELS> collectBlockData() = 0;
+		virtual void setOutputVoltage(double voltage) = 0;
+		virtual double getCurrentSamplingRate() = 0;
+
+		std::vector<double> getSamplingRates();
+
+		ACQUISITION_PARAMETERS getAcquisitionParameters();
 
 		void setSampleRate(int index);
 		void setCoupling(int coupling, int ch);
 		void setRange(int index, int ch);
 		void setNumberSamples(int32_t no_of_samples);
-		virtual void setOutputVoltage(double voltage) = 0;
 
 		CircularBuffer<int16_t> *m_liveBuffer = new CircularBuffer<int16_t>(4, DAQ_MAX_CHANNELS, 8000);
 
@@ -97,16 +102,31 @@ class daq : public QObject {
 
 		std::vector<std::string> PS_NAMES = { "PS2000", "PS2000A" };
 
-		std::vector<double> getSamplingRates();
-
-		virtual double getCurrentSamplingRate() = 0;
-
 	public slots:
 		virtual void connect_daq() = 0;
 		virtual void disconnect_daq() = 0;
 
 		void init();
 		void startStopAcquisition();
+
+	protected:
+		virtual void set_defaults(void) = 0;
+		virtual void get_info(void) = 0;
+
+		int32_t adc_to_mv(int32_t raw, int32_t ch);
+		int16_t mv_to_adc(int16_t mv, int16_t ch);
+
+		UNIT_MODEL m_unitOpened;
+		bool m_isConnected{ false };
+		bool m_acquisitionRunning{ false };
+		QTimer* timer{ nullptr };
+		ACQUISITION_PARAMETERS m_acquisitionParameters;
+		int16_t m_overflow{ 0 };
+		bool m_scale_to_mv{ true };
+
+		double m_maxSamplingRate{ 0 };
+		std::vector<int> m_availableTimebases;
+		std::vector<double> m_availableSamplingRates;
 
 	protected slots:
 		void getBlockData();
@@ -116,24 +136,6 @@ class daq : public QObject {
 		void connected(bool);
 		void acquisitionParametersChanged(ACQUISITION_PARAMETERS);
 		void collectedBlockData();
-
-	protected:
-		virtual void set_defaults(void) = 0;
-		virtual void get_info(void) = 0;
-
-		UNIT_MODEL m_unitOpened;
-		bool m_isConnected = false;
-		bool m_acquisitionRunning = false;
-		int32_t adc_to_mv(int32_t raw, int32_t ch);
-		int16_t mv_to_adc(int16_t mv, int16_t ch);
-		QTimer *timer = nullptr;
-		ACQUISITION_PARAMETERS m_acquisitionParameters;
-		int16_t m_overflow = 0;
-		bool m_scale_to_mv = true;
-
-		double m_maxSamplingRate{ 0 };
-		std::vector<int> m_availableTimebases;
-		std::vector<double> m_availableSamplingRates;
 };
 
 #endif // DAQ_H

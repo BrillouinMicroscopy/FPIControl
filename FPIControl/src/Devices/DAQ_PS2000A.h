@@ -39,21 +39,21 @@ class daq_PS2000A : public daq {
 	public:
 		explicit daq_PS2000A(QObject *parent);
 		~daq_PS2000A();
-		void setAcquisitionParameters();
-		std::array<std::vector<int32_t>, DAQ_MAX_CHANNELS> collectBlockData();
-		void setOutputVoltage(double voltage);
+		void setAcquisitionParameters() override;
+		std::array<std::vector<int32_t>, DAQ_MAX_CHANNELS> collectBlockData() override;
+		void setOutputVoltage(double voltage) override;
 
 		double getCurrentSamplingRate() override;
 
 	public slots:
-		void connect_daq();
-		void disconnect_daq();
+		void connect_daq() override;
+		void disconnect_daq() override;
 
 	private:
-		void set_defaults(void);
-		void get_info(void);
+		void set_defaults(void) override;
+		void get_info(void) override;
 
-		int m_defaultTimebaseIndex = 12;
+		int m_defaultTimebaseIndex{ 12 };
 
 		int16_t buffers[PS2000A_MAX_CHANNEL_BUFFERS][DAQ_BUFFER_SIZE * sizeof(int16_t)]{ 0 };
 };
