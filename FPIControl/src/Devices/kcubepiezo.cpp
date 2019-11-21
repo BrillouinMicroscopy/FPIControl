@@ -61,7 +61,7 @@ void kcubepiezo::restoreOutputVoltageIncrement() {
  * Public slots
  */
 
-void kcubepiezo::connect_device() {
+void kcubepiezo::connect() {
 	PCC_Open(serialNo);
 	// start the device polling at 200ms intervals
 	PCC_StartPolling(serialNo, 200);
@@ -71,7 +71,7 @@ void kcubepiezo::connect_device() {
 	emit(connected(m_isConnected));
 }
 
-void kcubepiezo::disconnect_device() {
+void kcubepiezo::disconnect() {
 	// stop polling
 	PCC_StopPolling(serialNo);
 	PCC_Close(serialNo);

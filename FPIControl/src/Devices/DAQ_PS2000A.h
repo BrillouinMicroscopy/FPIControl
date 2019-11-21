@@ -46,8 +46,8 @@ class daq_PS2000A : public daq {
 		double getCurrentSamplingRate() override;
 
 	public slots:
-		void connect_daq() override;
-		void disconnect_daq() override;
+		void connect() override;
+		void disconnect() override;
 
 	private:
 		void set_defaults(void) override;

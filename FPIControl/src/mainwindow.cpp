@@ -262,7 +262,7 @@ MainWindow::MainWindow(QWidget* parent) noexcept :
 	m_acquisitionThread.startWorker(m_lockingControl);
 	m_acquisitionThread.startWorker(m_piezoControl);
 
-	QMetaObject::invokeMethod(m_piezoControl, [&m_piezoControl = m_piezoControl]() { m_piezoControl->connect_device(); }, Qt::AutoConnection);
+	QMetaObject::invokeMethod(m_piezoControl, [&m_piezoControl = m_piezoControl]() { m_piezoControl->connect(); }, Qt::AutoConnection);
 }
 
 MainWindow::~MainWindow() {
@@ -329,7 +329,7 @@ void MainWindow::initDAQ() {
 
 	updateSamplingRates();
 
-	QMetaObject::invokeMethod(m_dataAcquisition, [&m_dataAcquisition = m_dataAcquisition]() { m_dataAcquisition->connect_daq(); }, Qt::AutoConnection);
+	QMetaObject::invokeMethod(m_dataAcquisition, [&m_dataAcquisition = m_dataAcquisition]() { m_dataAcquisition->connect(); }, Qt::AutoConnection);
 };
 
 void MainWindow::updateSamplingRates() {
@@ -839,11 +839,11 @@ void MainWindow::on_floatingViewCheckBox_clicked(const bool checked) {
 }
 
 void MainWindow::on_actionConnect_DAQ_triggered() {
-	QMetaObject::invokeMethod(m_dataAcquisition, [&m_dataAcquisition = m_dataAcquisition]() { m_dataAcquisition->connect_daq(); }, Qt::AutoConnection);
+	QMetaObject::invokeMethod(m_dataAcquisition, [&m_dataAcquisition = m_dataAcquisition]() { m_dataAcquisition->connect(); }, Qt::AutoConnection);
 }
 
 void MainWindow::on_actionDisconnect_DAQ_triggered() {
-	QMetaObject::invokeMethod(m_dataAcquisition, [&m_dataAcquisition = m_dataAcquisition]() { m_dataAcquisition->disconnect_daq(); }, Qt::AutoConnection);
+	QMetaObject::invokeMethod(m_dataAcquisition, [&m_dataAcquisition = m_dataAcquisition]() { m_dataAcquisition->disconnect(); }, Qt::AutoConnection);
 }
 
 void MainWindow::daqConnectionChanged(bool connected) {
@@ -863,11 +863,11 @@ void MainWindow::daqConnectionChanged(bool connected) {
 }
 
 void MainWindow::on_actionConnect_Piezo_triggered() {
-	QMetaObject::invokeMethod(m_piezoControl, [&m_piezoControl = m_piezoControl]() { m_piezoControl->connect_device(); }, Qt::AutoConnection);
+	QMetaObject::invokeMethod(m_piezoControl, [&m_piezoControl = m_piezoControl]() { m_piezoControl->connect(); }, Qt::AutoConnection);
 }
 
 void MainWindow::on_actionDisconnect_Piezo_triggered() {
-	QMetaObject::invokeMethod(m_piezoControl, [&m_piezoControl = m_piezoControl]() { m_piezoControl->disconnect_device(); }, Qt::AutoConnection);
+	QMetaObject::invokeMethod(m_piezoControl, [&m_piezoControl = m_piezoControl]() { m_piezoControl->disconnect(); }, Qt::AutoConnection);
 }
 
 void MainWindow::piezoConnectionChanged(bool connected) {

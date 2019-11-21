@@ -35,8 +35,8 @@ public:
 
 public slots:
 	void init() {};
-	void connect_device();
-	void disconnect_device();
+	void connect();
+	void disconnect();
 	void enable();
 	void disable();
 

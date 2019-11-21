@@ -103,8 +103,8 @@ class daq : public QObject {
 		std::vector<std::string> PS_NAMES = { "PS2000", "PS2000A" };
 
 	public slots:
-		virtual void connect_daq() = 0;
-		virtual void disconnect_daq() = 0;
+		virtual void connect() = 0;
+		virtual void disconnect() = 0;
 
 		void init();
 		void startStopAcquisition();

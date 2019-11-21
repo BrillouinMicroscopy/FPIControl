@@ -25,7 +25,7 @@ daq_PS2000::daq_PS2000(QObject *parent) :
 }
 
 daq_PS2000::~daq_PS2000() {
-	disconnect_daq();
+	disconnect();
 }
 
 void daq_PS2000::setAcquisitionParameters() {
@@ -136,7 +136,7 @@ double daq_PS2000::getCurrentSamplingRate() {
  * Public slots
  */
 
-void daq_PS2000::connect_daq() {
+void daq_PS2000::connect() {
 	if (!m_isConnected) {
 		m_unitOpened.handle = ps2000_open_unit();
 		get_info();
@@ -152,7 +152,7 @@ void daq_PS2000::connect_daq() {
 	emit(connected(m_isConnected));
 }
 
-void daq_PS2000::disconnect_daq() {
+void daq_PS2000::disconnect() {
 	if (m_isConnected) {
 		if (timer->isActive()) {
 			timer->stop();
