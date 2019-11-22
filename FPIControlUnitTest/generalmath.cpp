@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "..\FPIControl\generalmath.h"
+#include "..\FPIControl\src\generalmath.h"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
