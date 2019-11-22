@@ -902,8 +902,7 @@ void MainWindow::on_enablePiezoCheckBox_clicked(const bool checked) {
 void MainWindow::on_scanButton_clicked() {
 	if (!m_lockingControl->scanData.m_running) {
 		QMetaObject::invokeMethod(m_lockingControl, [&m_lockingControl = m_lockingControl]() { m_lockingControl->startScan(); }, Qt::AutoConnection);
-	}
-	else {
+	} else {
 		m_lockingControl->scanData.m_abort = true;
 	}
 }

@@ -143,8 +143,7 @@ void daq_PS2000::connect() {
 
 		if (!m_unitOpened.handle) {
 			m_isConnected = false;
-		}
-		else {
+		} else {
 			setAcquisitionParameters();
 			m_isConnected = true;
 		}

@@ -202,8 +202,7 @@ void Locking::lock() {
 	if (phaseStep > 0) {
 		// simple rotation to the left
 		std::rotate(reference.begin(), reference.begin() + phaseStep, reference.end());
-	}
-	else if (phaseStep < 0) {
+	} else if (phaseStep < 0) {
 		// simple rotation to the right
 		std::rotate(reference.rbegin(), reference.rbegin() + phaseStep, reference.rend());
 	}
@@ -238,14 +237,12 @@ void Locking::lock() {
 				if (m_daqVoltage > 0) {
 					m_piezoControl->incrementVoltage(1);
 					m_piezoVoltage = m_piezoControl->getVoltage();
-				}
-				else {
+				} else {
 					m_piezoControl->incrementVoltage(-1);
 					m_piezoVoltage = m_piezoControl->getVoltage();
 				}
 			}
-		}
-		else {
+		} else {
 			lockSettings.compensating = false;
 			emit(compensationStateChanged(false));
 		}

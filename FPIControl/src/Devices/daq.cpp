@@ -43,11 +43,9 @@ void daq::setRange(int index, int ch) {
 		m_unitOpened.channelSettings[ch].enabled = true;
 		m_acquisitionParameters.channelSettings[ch].range = index + 2;
 		m_unitOpened.channelSettings[ch].range = index + 2;
-	}
-	else if (index == 9) {
+	} else if (index == 9) {
 		// set auto range
-	}
-	else {
+	} else {
 		m_acquisitionParameters.channelSettings[ch].enabled = false;
 		m_unitOpened.channelSettings[ch].enabled = false;
 	}

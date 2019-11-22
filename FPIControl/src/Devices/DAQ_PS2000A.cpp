@@ -174,8 +174,7 @@ void daq_PS2000A::connect() {
 
 		if (m_unitOpened.handle < 0) {
 			m_isConnected = false;
-		}
-		else {
+		} else {
 			get_info();
 			setAcquisitionParameters();
 			m_isConnected = true;
@@ -288,8 +287,7 @@ void daq_PS2000A::get_info(void) {
 
 		if (m_unitOpened.noOfChannels == DUAL_SCOPE) {
 			m_unitOpened.channelSettings[PS2000A_CHANNEL_B].enabled = true;
-		}
-		else {
+		} else {
 			m_unitOpened.channelSettings[PS2000A_CHANNEL_B].enabled = false;
 		}
 
@@ -298,8 +296,7 @@ void daq_PS2000A::get_info(void) {
 
 		set_defaults();
 
-	}
-	else {
+	} else {
 		//printf("Unit Not Opened\n");
 
 		//ps2000_get_unit_info(m_unitOpened.handle, line, sizeof(line), 5);
