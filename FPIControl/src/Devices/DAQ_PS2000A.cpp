@@ -3,6 +3,10 @@
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMainWindow>
 
+/*
+ * Public definitions
+ */
+
 daq_PS2000A::daq_PS2000A(QObject *parent) :
 	daq(parent,
 		{ 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000 },
@@ -24,9 +28,8 @@ daq_PS2000A::daq_PS2000A(QObject *parent) :
 	);
 }
 
-
 daq_PS2000A::~daq_PS2000A() {
-	disconnect_daq();
+	disconnect();
 }
 
 void daq_PS2000A::setAcquisitionParameters() {
@@ -89,7 +92,7 @@ std::array<std::vector<int32_t>, PS2000A_MAX_CHANNELS> daq_PS2000A::collectBlock
 		NULL									// * pParameter
 	);
 
-	int16_t ready = 0;
+	int16_t ready{ 0 };
 	ps2000aIsReady(m_unitOpened.handle, &ready);
 	while (!ready) {
 		Sleep(10);
@@ -161,6 +164,42 @@ double daq_PS2000A::getCurrentSamplingRate() {
 	}
 }
 
+/*
+ * Public slots
+ */
+
+void daq_PS2000A::connect() {
+	if (!m_isConnected) {
+		ps2000aOpenUnit(&m_unitOpened.handle, NULL);
+
+		if (m_unitOpened.handle < 0) {
+			m_isConnected = false;
+		} else {
+			get_info();
+			setAcquisitionParameters();
+			m_isConnected = true;
+		}
+	}
+	emit(connected(m_isConnected));
+}
+
+void daq_PS2000A::disconnect() {
+	if (m_isConnected) {
+		if (timer->isActive()) {
+			timer->stop();
+			m_acquisitionRunning = false;
+		}
+		ps2000aCloseUnit(m_unitOpened.handle);
+		m_unitOpened.handle = NULL;
+		m_isConnected = false;
+	}
+	emit(connected(m_isConnected));
+}
+
+/*
+ * Private definitions
+ */
+
 /****************************************************************************
 * set_defaults - restore default settings
 ****************************************************************************/
@@ -184,34 +223,6 @@ void daq_PS2000A::set_defaults(void) {
 			0											// analog offset
 		);
 	}
-}
-
-void daq_PS2000A::connect_daq() {
-	if (!m_isConnected) {
-		ps2000aOpenUnit(&m_unitOpened.handle, NULL);
-
-		if (m_unitOpened.handle < 0) {
-			m_isConnected = false;
-		} else {
-			get_info();
-			setAcquisitionParameters();
-			m_isConnected = true;
-		}
-	}
-	emit(connected(m_isConnected));
-}
-
-void daq_PS2000A::disconnect_daq() {
-	if (m_isConnected) {
-		if (timer->isActive()) {
-			timer->stop();
-			m_acquisitionRunning = false;
-		}
-		ps2000aCloseUnit(m_unitOpened.handle);
-		m_unitOpened.handle = NULL;
-		m_isConnected = false;
-	}
-	emit(connected(m_isConnected));
 }
 
 void daq_PS2000A::get_info(void) {
@@ -276,8 +287,7 @@ void daq_PS2000A::get_info(void) {
 
 		if (m_unitOpened.noOfChannels == DUAL_SCOPE) {
 			m_unitOpened.channelSettings[PS2000A_CHANNEL_B].enabled = true;
-		}
-		else {
+		} else {
 			m_unitOpened.channelSettings[PS2000A_CHANNEL_B].enabled = false;
 		}
 
@@ -286,8 +296,7 @@ void daq_PS2000A::get_info(void) {
 
 		set_defaults();
 
-	}
-	else {
+	} else {
 		//printf("Unit Not Opened\n");
 
 		//ps2000_get_unit_info(m_unitOpened.handle, line, sizeof(line), 5);

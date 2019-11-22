@@ -1,5 +1,5 @@
 #include "mainwindow.h"
-#include "daq.h"
+#include "Devices\daq.h"
 #include "ui_mainwindow.h"
 #include "colors.h"
 #include <QtWidgets>
@@ -16,73 +16,74 @@
 #include <QtCharts/QXYLegendMarker>
 #include "version.h"
 
-MainWindow::MainWindow(QWidget *parent) noexcept :
-    QMainWindow(parent),
-    ui(new Ui::MainWindow) {
+MainWindow::MainWindow(QWidget* parent) noexcept :
+	QMainWindow(parent),
+	ui(new Ui::MainWindow) {
 
-    ui->setupUi(this);
+	ui->setupUi(this);
 
 	qRegisterMetaType<ACQUISITION_PARAMETERS>("ACQUISITION_PARAMETERS");
 	qRegisterMetaType<LOCKSTATE>("LOCKSTATE");
 	qRegisterMetaType<PIEZO_SETTINGS>("PIEZO_SETTINGS");
 
 	// slot laser connection
-	static QMetaObject::Connection connection = QWidget::connect(
+	static QMetaObject::Connection connection;
+	connection = QWidget::connect(
 		m_piezoControl,
-		SIGNAL(connected(bool)),
+		&kcubepiezo::connected,
 		this,
-		SLOT(piezoConnectionChanged(bool))
+		&MainWindow::piezoConnectionChanged
 	);
 
 	connection = QWidget::connect(
 		m_piezoControl,
-		SIGNAL(settingsChanged(PIEZO_SETTINGS)),
+		&kcubepiezo::settingsChanged,
 		this,
-		SLOT(updatePiezoSettings(PIEZO_SETTINGS))
+		&MainWindow::updatePiezoSettings
 	);
 
 	// slot daq acquisition running
 	connection = QWidget::connect(
 		m_lockingControl,
-		SIGNAL(s_acquireLockingRunning(bool)),
+		&Locking::s_acquireLockingRunning,
 		this,
-		SLOT(showAcquireLockingRunning(bool))
+		&MainWindow::showAcquireLockingRunning
 	);
 
 	// slot daq acquisition running
 	connection = QWidget::connect(
 		m_lockingControl,
-		SIGNAL(s_scanRunning(bool)),
+		&Locking::s_scanRunning,
 		this,
-		SLOT(showScanRunning(bool))
+		&MainWindow::showScanRunning
 	);
 
 	connection = QWidget::connect(
 		m_lockingControl,
-		SIGNAL(s_scanPassAcquired()),
+		&Locking::s_scanPassAcquired,
 		this,
-		SLOT(updateScanView())
+		&MainWindow::updateScanView
 	);
 
 	connection = QWidget::connect(
 		m_lockingControl,
-		SIGNAL(locked()),
+		&Locking::locked,
 		this,
-		SLOT(updateLockView())
+		[this]() { updateLockView(); }
 	);
 
 	connection = QWidget::connect(
 		m_lockingControl,
-		SIGNAL(lockStateChanged(LOCKSTATE)),
+		&Locking::lockStateChanged,
 		this,
-		SLOT(updateLockState(LOCKSTATE))
+		&MainWindow::updateLockState
 	);
 
 	connection = QWidget::connect(
 		m_lockingControl,
-		SIGNAL(compensationStateChanged(bool)),
+		&Locking::compensationStateChanged,
 		this,
-		SLOT(updateCompensationState(bool))
+		&MainWindow::updateCompensationState
 	);
 	
 	// set up live view plots
@@ -261,7 +262,7 @@ MainWindow::MainWindow(QWidget *parent) noexcept :
 	m_acquisitionThread.startWorker(m_lockingControl);
 	m_acquisitionThread.startWorker(m_piezoControl);
 
-	QMetaObject::invokeMethod(m_piezoControl, "connect_device", Qt::AutoConnection);
+	QMetaObject::invokeMethod(m_piezoControl, [&m_piezoControl = m_piezoControl]() { m_piezoControl->connect(); }, Qt::AutoConnection);
 }
 
 MainWindow::~MainWindow() {
@@ -300,35 +301,35 @@ void MainWindow::initDAQ() {
 	// possible disconnection
 	QMetaObject::Connection connection = QWidget::connect(
 		m_dataAcquisition,
-		SIGNAL(connected(bool)),
+		&daq::connected,
 		this,
-		SLOT(daqConnectionChanged(bool))
+		&MainWindow::daqConnectionChanged
 	);
 
 	connection = QWidget::connect(
 		m_dataAcquisition,
-		SIGNAL(s_acquisitionRunning(bool)),
+		&daq::s_acquisitionRunning,
 		this,
-		SLOT(showAcqRunning(bool))
+		&MainWindow::showAcqRunning
 	);
 
 	connection = QWidget::connect(
 		m_dataAcquisition,
-		SIGNAL(collectedBlockData()),
+		&daq::collectedBlockData,
 		this,
-		SLOT(updateLiveView())
+		&MainWindow::updateLiveView
 	);
 
 	connection = QWidget::connect(
 		m_dataAcquisition,
-		SIGNAL(acquisitionParametersChanged(ACQUISITION_PARAMETERS)),
+		&daq::acquisitionParametersChanged,
 		this,
-		SLOT(updateAcquisitionParameters(ACQUISITION_PARAMETERS))
+		&MainWindow::updateAcquisitionParameters
 	);
 
 	updateSamplingRates();
 
-	QMetaObject::invokeMethod(m_dataAcquisition, "connect_daq", Qt::AutoConnection);
+	QMetaObject::invokeMethod(m_dataAcquisition, [&m_dataAcquisition = m_dataAcquisition]() { m_dataAcquisition->connect(); }, Qt::AutoConnection);
 };
 
 void MainWindow::updateSamplingRates() {
@@ -417,11 +418,12 @@ void MainWindow::initSettingsDialog() {
 	}
 	m_daqDropdown->setCurrentIndex((int)m_daqType);
 
-	static QMetaObject::Connection connection = QWidget::connect(
+	static QMetaObject::Connection connection;
+	connection = QWidget::connect<void(QComboBox::*)(int)>(
 		m_daqDropdown,
-		SIGNAL(currentIndexChanged(int)),
+		&QComboBox::currentIndexChanged,
 		this,
-		SLOT(selectDAQ(int))
+		&MainWindow::selectDAQ
 	);
 
 	QWidget *buttonWidget = new QWidget();
@@ -438,9 +440,9 @@ void MainWindow::initSettingsDialog() {
 
 	connection = QWidget::connect(
 		okButton,
-		SIGNAL(clicked()),
+		&QPushButton::clicked,
 		this,
-		SLOT(saveSettings())
+		&MainWindow::saveSettings
 	);
 
 	QPushButton *cancelButton = new QPushButton();
@@ -450,9 +452,9 @@ void MainWindow::initSettingsDialog() {
 
 	connection = QWidget::connect(
 		cancelButton,
-		SIGNAL(clicked()),
+		&QPushButton::clicked,
 		this,
-		SLOT(cancelSettings())
+		&MainWindow::cancelSettings
 	);
 
 	settingsDialog->layout()->setSizeConstraint(QLayout::SetFixedSize);
@@ -467,18 +469,48 @@ void MainWindow::connectMarkers() {
 	QMetaObject::Connection connection;
 	foreach(QtCharts::QLegendMarker* marker, liveViewChart->legend()->markers()) {
 		// Disconnect possible existing connection to avoid multiple connections
-		QWidget::disconnect(marker, SIGNAL(clicked()), this, SLOT(handleMarkerClicked()));
-		connection = QWidget::connect(marker, SIGNAL(clicked()), this, SLOT(handleMarkerClicked()));
+		QWidget::disconnect(
+			marker,
+			&QtCharts::QLegendMarker::clicked,
+			this,
+			&MainWindow::handleMarkerClicked
+		);
+		connection = QWidget::connect(
+			marker,
+			&QtCharts::QLegendMarker::clicked,
+			this,
+			&MainWindow::handleMarkerClicked
+		);
 	}
 	foreach(QtCharts::QLegendMarker* marker, lockViewChart->legend()->markers()) {
 		// Disconnect possible existing connection to avoid multiple connections
-		QWidget::disconnect(marker, SIGNAL(clicked()), this, SLOT(handleMarkerClicked()));
-		connection = QWidget::connect(marker, SIGNAL(clicked()), this, SLOT(handleMarkerClicked()));
+		QWidget::disconnect(
+			marker,
+			&QtCharts::QLegendMarker::clicked,
+			this,
+			&MainWindow::handleMarkerClicked
+		);
+		connection = QWidget::connect(
+			marker,
+			&QtCharts::QLegendMarker::clicked,
+			this,
+			&MainWindow::handleMarkerClicked
+		);
 	}
 	foreach(QtCharts::QLegendMarker* marker, scanViewChart->legend()->markers()) {
 		// Disconnect possible existing connection to avoid multiple connections
-		QWidget::disconnect(marker, SIGNAL(clicked()), this, SLOT(handleMarkerClicked()));
-		connection = QWidget::connect(marker, SIGNAL(clicked()), this, SLOT(handleMarkerClicked()));
+		QWidget::disconnect(
+			marker,
+			&QtCharts::QLegendMarker::clicked,
+			this,
+			&MainWindow::handleMarkerClicked
+		);
+		connection = QWidget::connect(
+			marker,
+			&QtCharts::QLegendMarker::clicked,
+			this,
+			&MainWindow::handleMarkerClicked
+		);
 	}
 }
 
@@ -527,7 +559,7 @@ void MainWindow::handleMarkerClicked() {
 }
 
 void MainWindow::on_acquisitionButton_clicked() {
-	QMetaObject::invokeMethod(m_dataAcquisition, "startStopAcquisition", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(m_dataAcquisition, [&m_dataAcquisition = m_dataAcquisition]() { m_dataAcquisition->startStopAcquisition(); }, Qt::AutoConnection);
 }
 
 void MainWindow::showAcqRunning(bool running) {
@@ -547,7 +579,7 @@ void MainWindow::showScanRunning(bool running) {
 }
 
 void MainWindow::on_acquireLockButton_clicked() {
-	QMetaObject::invokeMethod(m_lockingControl, "startStopAcquireLocking", Qt::AutoConnection);
+	QMetaObject::invokeMethod(m_lockingControl, [&m_lockingControl = m_lockingControl]() { m_lockingControl->startStopAcquireLocking(); }, Qt::AutoConnection);
 }
 
 void MainWindow::showAcquireLockingRunning(bool running) {
@@ -560,7 +592,7 @@ void MainWindow::showAcquireLockingRunning(bool running) {
 }
 
 void MainWindow::on_lockButton_clicked() {
-	QMetaObject::invokeMethod(m_lockingControl, "startStopLocking", Qt::AutoConnection);
+	QMetaObject::invokeMethod(m_lockingControl, [&m_lockingControl = m_lockingControl]() { m_lockingControl->startStopLocking(); }, Qt::AutoConnection);
 }
 
 void MainWindow::on_sampleRate_activated(const int index) {
@@ -807,11 +839,11 @@ void MainWindow::on_floatingViewCheckBox_clicked(const bool checked) {
 }
 
 void MainWindow::on_actionConnect_DAQ_triggered() {
-	QMetaObject::invokeMethod(m_dataAcquisition, "connect_daq", Qt::AutoConnection);
+	QMetaObject::invokeMethod(m_dataAcquisition, [&m_dataAcquisition = m_dataAcquisition]() { m_dataAcquisition->connect(); }, Qt::AutoConnection);
 }
 
 void MainWindow::on_actionDisconnect_DAQ_triggered() {
-	QMetaObject::invokeMethod(m_dataAcquisition, "disconnect_daq", Qt::AutoConnection);
+	QMetaObject::invokeMethod(m_dataAcquisition, [&m_dataAcquisition = m_dataAcquisition]() { m_dataAcquisition->disconnect(); }, Qt::AutoConnection);
 }
 
 void MainWindow::daqConnectionChanged(bool connected) {
@@ -831,11 +863,11 @@ void MainWindow::daqConnectionChanged(bool connected) {
 }
 
 void MainWindow::on_actionConnect_Piezo_triggered() {
-	QMetaObject::invokeMethod(m_piezoControl, "connect_device", Qt::AutoConnection);
+	QMetaObject::invokeMethod(m_piezoControl, [&m_piezoControl = m_piezoControl]() { m_piezoControl->connect(); }, Qt::AutoConnection);
 }
 
 void MainWindow::on_actionDisconnect_Piezo_triggered() {
-	QMetaObject::invokeMethod(m_piezoControl, "disconnect_device", Qt::AutoConnection);
+	QMetaObject::invokeMethod(m_piezoControl, [&m_piezoControl = m_piezoControl]() { m_piezoControl->disconnect(); }, Qt::AutoConnection);
 }
 
 void MainWindow::piezoConnectionChanged(bool connected) {
@@ -861,17 +893,16 @@ void MainWindow::updatePiezoSettings(PIEZO_SETTINGS settings) {
 
 void MainWindow::on_enablePiezoCheckBox_clicked(const bool checked) {
 	if (checked) {
-		QMetaObject::invokeMethod(m_piezoControl, "enable", Qt::AutoConnection);
+		QMetaObject::invokeMethod(m_piezoControl, [&m_piezoControl = m_piezoControl]() { m_piezoControl->enable(); }, Qt::AutoConnection);
 	} else {
-		QMetaObject::invokeMethod(m_piezoControl, "disable", Qt::AutoConnection);
+		QMetaObject::invokeMethod(m_piezoControl, [&m_piezoControl = m_piezoControl]() { m_piezoControl->disable(); }, Qt::AutoConnection);
 	}
 }
 
 void MainWindow::on_scanButton_clicked() {
 	if (!m_lockingControl->scanData.m_running) {
-		QMetaObject::invokeMethod(m_lockingControl, "startScan", Qt::AutoConnection);
-	}
-	else {
+		QMetaObject::invokeMethod(m_lockingControl, [&m_lockingControl = m_lockingControl]() { m_lockingControl->startScan(); }, Qt::AutoConnection);
+	} else {
 		m_lockingControl->scanData.m_abort = true;
 	}
 }

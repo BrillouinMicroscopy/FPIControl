@@ -6,16 +6,15 @@
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QChart>
 
-#include "DAQ_PS2000.h"
-#include "DAQ_PS2000A.h"
+#include "Devices\DAQ_PS2000.h"
+#include "Devices\DAQ_PS2000A.h"
 #include "locking.h"
-#include "kcubepiezo.h"
+#include "Devices\kcubepiezo.h"
 #include "thread.h"
 
 namespace Ui {
 	class MainWindow;
 }
-
 
 class IndicatorWidget : public QWidget {
 	Q_OBJECT
@@ -48,7 +47,7 @@ protected:
 
 private:
 	QColor m_color;
-	bool m_on;
+	bool m_on{ false };
 	void setOn(bool on) {
 		if (on == m_on)
 			return;
@@ -62,7 +61,7 @@ private:
 };
 
 typedef struct {
-	bool automatic = TRUE;
+	bool automatic{ true };
 	double xmin{ 0 };
 	double xmax{ 1 };
 	double ymin{ 0 };
@@ -70,7 +69,7 @@ typedef struct {
 } AXIS_RANGE;
 
 typedef struct {
-	bool floatingView = FALSE;
+	bool floatingView{ false };
 	AXIS_RANGE liveView;
 	AXIS_RANGE lockView;
 	AXIS_RANGE scanView;
@@ -92,6 +91,42 @@ class MainWindow : public QMainWindow {
 public:
     explicit MainWindow(QWidget *parent = 0) noexcept;
     ~MainWindow();
+
+public slots:
+	void connectMarkers();
+	void handleMarkerClicked();
+
+private:
+	void initDAQ();
+	void updateSamplingRates();
+	std::string getSamplingRateString(double samplingRate);
+
+	PS_TYPES m_daqType{ PS_TYPES::MODEL_PS2000A };
+	PS_TYPES m_daqTypeTemporary = m_daqType;
+	QComboBox* m_daqDropdown{ nullptr };
+
+	QDialog* settingsDialog{ nullptr };
+	bool m_isDAQConnected{ false };
+	bool m_isPiezoConnected{ false };
+
+	Ui::MainWindow* ui;
+	Thread m_acquisitionThread;
+	QtCharts::QChart* liveViewChart;
+	QtCharts::QChart* lockViewChart;
+	QtCharts::QChart* scanViewChart;
+	QVector<QtCharts::QLineSeries*> liveViewPlots;
+	QVector<QtCharts::QLineSeries*> lockViewPlots;
+	QVector<QtCharts::QLineSeries*> scanViewPlots;
+	daq* m_dataAcquisition{ nullptr };
+	kcubepiezo* m_piezoControl = new kcubepiezo();
+	Locking* m_lockingControl = new Locking(nullptr, &m_dataAcquisition, m_piezoControl);
+	VIEWS m_selectedView{ VIEWS::LIVE };	// selection of the view
+	IndicatorWidget* lockIndicator;
+	QLabel* compensationIndicator;
+	QLabel* lockInfo;
+	QLabel* compensationInfo;
+	QLabel* statusInfo;
+	VIEW_SETTINGS viewSettings;
 
 private slots:
 	void on_actionQuit_triggered();
@@ -162,41 +197,6 @@ private slots:
 	void piezoConnectionChanged(bool connected);
 	void updatePiezoSettings(PIEZO_SETTINGS);
 	void daqConnectionChanged(bool connected);
-
-public slots:
-	void connectMarkers();
-	void handleMarkerClicked();
-
-private:
-	PS_TYPES m_daqType = PS_TYPES::MODEL_PS2000A;
-	PS_TYPES m_daqTypeTemporary = m_daqType;
-	void initDAQ();
-	QComboBox *m_daqDropdown;
-
-	void updateSamplingRates();
-	std::string getSamplingRateString(double samplingRate);
-	QDialog *settingsDialog = nullptr;
-	bool m_isDAQConnected = false;
-	bool m_isPiezoConnected = false;
-
-    Ui::MainWindow *ui;
-	Thread m_acquisitionThread;
-	QtCharts::QChart *liveViewChart;
-	QtCharts::QChart *lockViewChart;
-	QtCharts::QChart *scanViewChart;
-	QVector<QtCharts::QLineSeries *> liveViewPlots;
-	QVector<QtCharts::QLineSeries *> lockViewPlots;
-	QVector<QtCharts::QLineSeries *> scanViewPlots;
-	daq *m_dataAcquisition = nullptr;
-	kcubepiezo *m_piezoControl = new kcubepiezo();
-	Locking *m_lockingControl = new Locking(nullptr, &m_dataAcquisition, m_piezoControl);
-	VIEWS m_selectedView = VIEWS::LIVE;	// selection of the view
-	IndicatorWidget *lockIndicator;
-	QLabel *compensationIndicator;
-	QLabel *lockInfo;
-	QLabel *compensationInfo;
-	QLabel *statusInfo;
-	VIEW_SETTINGS viewSettings;
 };
 
 #endif // MAINWINDOW_H

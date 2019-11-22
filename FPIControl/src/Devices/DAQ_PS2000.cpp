@@ -3,6 +3,10 @@
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMainWindow>
 
+/*
+ * Public definitions
+ */
+
 daq_PS2000::daq_PS2000(QObject *parent) :
 	daq(parent,
 		{ 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000 },
@@ -21,7 +25,7 @@ daq_PS2000::daq_PS2000(QObject *parent) :
 }
 
 daq_PS2000::~daq_PS2000() {
-	disconnect_daq();
+	disconnect();
 }
 
 void daq_PS2000::setAcquisitionParameters() {
@@ -128,6 +132,42 @@ double daq_PS2000::getCurrentSamplingRate() {
 	return this->m_maxSamplingRate / pow(2, m_acquisitionParameters.timebase);
 }
 
+/*
+ * Public slots
+ */
+
+void daq_PS2000::connect() {
+	if (!m_isConnected) {
+		m_unitOpened.handle = ps2000_open_unit();
+		get_info();
+
+		if (!m_unitOpened.handle) {
+			m_isConnected = false;
+		} else {
+			setAcquisitionParameters();
+			m_isConnected = true;
+		}
+	}
+	emit(connected(m_isConnected));
+}
+
+void daq_PS2000::disconnect() {
+	if (m_isConnected) {
+		if (timer->isActive()) {
+			timer->stop();
+			m_acquisitionRunning = false;
+		}
+		ps2000_close_unit(m_unitOpened.handle);
+		m_unitOpened.handle = NULL;
+		m_isConnected = false;
+	}
+	emit(connected(m_isConnected));
+}
+
+/*
+ * Private definitions
+ */
+
 /****************************************************************************
 * set_defaults - restore default settings
 ****************************************************************************/
@@ -143,34 +183,6 @@ void daq_PS2000::set_defaults(void) {
 			m_unitOpened.channelSettings[ch].range
 		);
 	}
-}
-
-void daq_PS2000::connect_daq() {
-	if (!m_isConnected) {
-		m_unitOpened.handle = ps2000_open_unit();
-		get_info();
-
-		if (!m_unitOpened.handle) {
-			m_isConnected = false;
-		} else {
-			setAcquisitionParameters();
-			m_isConnected = true;
-		}
-	}
-	emit(connected(m_isConnected));
-}
-
-void daq_PS2000::disconnect_daq() {
-	if (m_isConnected) {
-		if (timer->isActive()) {
-			timer->stop();
-			m_acquisitionRunning = false;
-		}
-		ps2000_close_unit(m_unitOpened.handle);
-		m_unitOpened.handle = NULL;
-		m_isConnected = false;
-	}
-	emit(connected(m_isConnected));
 }
 
 void daq_PS2000::get_info(void) {

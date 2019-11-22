@@ -36,8 +36,8 @@ public:
 
 	template <typename T = double>
 	static T absSum(std::vector<T> vector) {
-		T sum = 0;
-		for (int jj(0); jj < vector.size(); jj++) {
+		T sum{ 0 };
+		for (int jj{ 0 }; jj < vector.size(); jj++) {
 			sum += abs(vector[jj]);
 		}
 		return sum;
@@ -56,7 +56,7 @@ public:
 			return nan("1");
 		}
 		double m = mean(vector);
-		double accum = 0.0;
+		double accum{ 0.0 };
 		std::for_each(std::begin(vector), std::end(vector), [&](const double d) {
 			accum += (d - m) * (d - m);
 		});
@@ -70,7 +70,7 @@ public:
 		}
 		nrValues = (nrValues > vector.size()) ? vector.size() : nrValues;
 		double m = floatingMean(vector, nrValues);
-		double accum = 0.0;
+		double accum{ 0.0 };
 		std::for_each(std::prev(std::end(vector), nrValues), std::end(vector), [&](const double d) {
 			accum += (d - m) * (d - m);
 		});

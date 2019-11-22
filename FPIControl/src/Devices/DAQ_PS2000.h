@@ -12,8 +12,8 @@
 #include <gsl/gsl>
 #include "ps2000.h"
 #include "daq.h"
-#include "circularBuffer.h"
-#include "generalmath.h"
+#include "..\circularBuffer.h"
+#include "..\generalmath.h"
 
 #define DAQ_BUFFER_SIZE 	8000
 #define SINGLE_CH_SCOPE 1				// Single channel scope
@@ -37,21 +37,21 @@ class daq_PS2000 : public daq {
 	public:
 		explicit daq_PS2000(QObject *parent);
 		~daq_PS2000();
-		void setAcquisitionParameters();
-		std::array<std::vector<int32_t>, DAQ_MAX_CHANNELS> collectBlockData();
-		void setOutputVoltage(double voltage);
+		void setAcquisitionParameters() override;
+		std::array<std::vector<int32_t>, DAQ_MAX_CHANNELS> collectBlockData() override;
+		void setOutputVoltage(double voltage) override;
 
 		double getCurrentSamplingRate() override;
 
 	public slots:
-		void connect_daq();
-		void disconnect_daq();
+		void connect() override;
+		void disconnect() override;
 
 	private:
-		void set_defaults(void);
-		void get_info(void);
+		void set_defaults(void) override;
+		void get_info(void) override;
 
-		int m_defaultTimebaseIndex = 10;
+		int m_defaultTimebaseIndex{ 10 };
 };
 
 #endif // DAQ_PS2000_H
