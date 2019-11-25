@@ -159,6 +159,10 @@ copy "$(ProjectDir)assets\loader.gif" "$(TargetDir)"
 copy "$(ProgramW6432)\Pico Technology\SDK\lib\ps2000a.DLL" "$(TargetDir)"
 copy "$(ProgramW6432)\Thorlabs\Kinesis\Thorlabs.MotionControl.DeviceManager.DLL" "$(TargetDir)"
 copy "$(ProgramW6432)\Thorlabs\Kinesis\Thorlabs.MotionControl.KCube.Piezo.DLL" "$(TargetDir)"
+copy "$(QTDIR)\bin\Qt5Chartsd.dll" "$(TargetDir)"
+copy "$(QTDIR)\bin\Qt5Cored.dll" "$(TargetDir)"
+copy "$(QTDIR)\bin\Qt5Guid.dll" "$(TargetDir)"
+copy "$(QTDIR)\bin\Qt5Widgetsd.dll" "$(TargetDir)"
 copy "$(ProjectDir)assets\loader.gif" "$(TargetDir)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
