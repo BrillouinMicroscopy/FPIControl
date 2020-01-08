@@ -68,7 +68,7 @@ void kcubepiezo::connect() {
 	// Build list of connected device
 	if (TLI_BuildDeviceList() == 0) {
 		// get device list size 
-		auto n = TLI_GetDeviceListSize();
+		TLI_GetDeviceListSize();
 		// get BBD serial numbers
 		char serialNos[100];
 		TLI_GetDeviceListByTypeExt(serialNos, 100, deviceID);
