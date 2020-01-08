@@ -62,13 +62,47 @@ void kcubepiezo::restoreOutputVoltageIncrement() {
  */
 
 void kcubepiezo::connect() {
-	PCC_Open(serialNo);
-	// start the device polling at 200ms intervals
-	PCC_StartPolling(serialNo, 200);
-	m_isConnected = true;
-	// set default values
-	setDefaults();
-	emit(connected(m_isConnected));
+	// device ID for KCubePiezo
+	int deviceID = 81;
+
+	// Build list of connected device
+	if (TLI_BuildDeviceList() == 0) {
+		// get device list size 
+		auto n = TLI_GetDeviceListSize();
+		// get BBD serial numbers
+		char serialNos[100];
+		TLI_GetDeviceListByTypeExt(serialNos, 100, deviceID);
+
+		// output list of matching devices
+		{
+			char* searchContext = nullptr;
+			char* p = strtok_s(serialNos, ",", &searchContext);
+
+			while (p != nullptr) {
+				TLI_DeviceInfo deviceInfo;
+				// get device info from device
+				TLI_GetDeviceInfo(p, &deviceInfo);
+				// get strings from device info structure
+				char desc[65];
+				strncpy_s(desc, deviceInfo.description, 64);
+				desc[64] = '\0';
+				char serialNo[9];
+				strncpy_s(serialNo, deviceInfo.serialNo, 8);
+				serialNo[8] = '\0';
+				// output
+				p = strtok_s(nullptr, ",", &searchContext);
+			}
+		}
+	}
+
+	if (PCC_Open(serialNo) == 0) {
+		// start the device polling at 200ms intervals
+		PCC_StartPolling(serialNo, 200);
+		m_isConnected = true;
+		// set default values
+		setDefaults();
+		emit(connected(m_isConnected));
+	}
 }
 
 void kcubepiezo::disconnect() {
