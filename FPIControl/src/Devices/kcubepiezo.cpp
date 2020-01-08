@@ -63,7 +63,7 @@ void kcubepiezo::restoreOutputVoltageIncrement() {
 
 void kcubepiezo::connect() {
 	// device ID for KCubePiezo
-	int deviceID = 81;
+	int deviceID{ 81 };
 
 	// Build list of connected device
 	if (TLI_BuildDeviceList() == 0) {
@@ -75,7 +75,7 @@ void kcubepiezo::connect() {
 
 		// output list of matching devices
 		{
-			char* searchContext = nullptr;
+			char* searchContext{ nullptr };
 			char* p = strtok_s(serialNos, ",", &searchContext);
 
 			while (p != nullptr) {
