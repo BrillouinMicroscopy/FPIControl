@@ -3,7 +3,7 @@
 
 #include <QtWidgets>
 
-typedef struct {
+typedef struct COLORS {
 	QColor blue		= QColor(  0, 114, 189, 255);
 	QColor orange	= QColor(217,  83,  25, 255);
 	QColor yellow	= QColor(237, 177,  32, 255);

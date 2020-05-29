@@ -29,14 +29,14 @@ typedef enum class PSTypes {
 	MODEL_PS2000A = 1
 } PS_TYPES;
 
-typedef struct {
+typedef struct CHANNEL_SETTINGS {
 	int coupling = PS_DC;
 	int16_t range{ 0 };
 	bool enabled{ false };
 	int16_t values[DAQ_BUFFER_SIZE]{ 0 };
 } CHANNEL_SETTINGS;
 
-typedef struct {
+typedef struct UNIT_MODEL {
 	int16_t			handle{ 0 };
 	int				model{ 0 };
 	int				firstRange{ 0 };
@@ -53,13 +53,13 @@ typedef struct {
 	int16_t			bufferSize{ 0 };
 } UNIT_MODEL;
 
-typedef struct {
+typedef struct DEFAULT_CHANNEL_SETTINGS {
 	int coupling{ PS_AC };
 	int16_t range{ 0 };
 	bool enabled{ false };
 } DEFAULT_CHANNEL_SETTINGS;
 
-typedef struct {
+typedef struct ACQUISITION_PARAMETERS {
 	int16_t 	auto_trigger_ms{ 0 };
 	int32_t 	time_interval{ 0 };
 	int16_t 	time_units{ 0 };

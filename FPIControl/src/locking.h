@@ -14,14 +14,14 @@
 #include "Devices\kcubepiezo.h"
 #include "generalmath.h"
 
-typedef struct {
+typedef struct SCAN_SETTINGS {
 	double low{ 0 };			// [K] offset start
 	double high{ 7 };			// [K] offset end
 	int32_t	nrSteps{ 1000 };	// number of steps
 	double interval{ 0.1 };		// [s] interval between steps
 } SCAN_SETTINGS;
 
-typedef struct {
+typedef struct SCAN_DATA {
 	bool m_running{ false };		// is the scan currently running
 	bool m_abort{ false };			// should the scan be aborted
 	int32_t nrSteps{ 0 };
@@ -37,7 +37,7 @@ typedef enum enLockState {
 	FAILURE
 } LOCKSTATE;
 
-typedef struct {
+typedef struct LOCK_SETTINGS {
 	double proportional{ 2 };		//		control parameter of the proportional part
 	double integral{ 1 };			//		control parameter of the integral part
 	double derivative{ 0 };			//		control parameter of the derivative part
@@ -50,7 +50,7 @@ typedef struct {
 	LOCKSTATE state{ LOCKSTATE::INACTIVE };	//		locking enabled?
 } LOCK_SETTINGS;
 
-typedef struct {
+typedef struct LOCK_DATA {
 	std::vector<std::chrono::time_point<std::chrono::system_clock>> time;		// [s]	time vector
 	std::vector<int32_t> voltage;	// [µV]	output voltage (<int32_t> is sufficient for this)
 	std::vector<int32_t> amplitude;	// [µV]	measured intensity (<int32_t> is fine)
