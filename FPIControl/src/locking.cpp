@@ -232,7 +232,7 @@ void Locking::lock() {
 				lockSettings.compensating = false;
 				emit(compensationStateChanged(false));
 			}
-			if (lockSettings.compensating & (m_compensationTimer > 50)) {
+			if (lockSettings.compensating & (m_compensationTimer > lockSettings.compensationTimeout)) {
 				m_compensationTimer = 0;
 				if (m_daqVoltage > 0) {
 					m_piezoControl->incrementVoltage(1);

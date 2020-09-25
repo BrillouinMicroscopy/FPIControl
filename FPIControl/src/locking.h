@@ -44,6 +44,7 @@ typedef struct LOCK_SETTINGS {
 	double frequency{ 5000 };		// [Hz] approx. frequency of the reference signal
 	double phase{ 180 };			// [°]	phase shift between reference and detector signal
 	bool compensate{ true };		//		compensate the offset?
+	int compensationTimeout{ 25 };	//		cycles until next compensation
 	bool compensating{ false };		//		is it currently compensating?
 	double maxOffset{ 0.4 };		// [V]	maximum voltage of the external input before the offset compensation kicks in
 	double targetOffset{ 0.1 };		// [V]	target voltage of the offset compensation
