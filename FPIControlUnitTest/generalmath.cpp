@@ -39,7 +39,8 @@ namespace FPIControlUnitTest {
 					1.0, 2.0, 3.0, 4.0, 5.0,
 					6.0, 7.0, 8.0, 9.0, 10.0
 				};
-				Assert::AreEqual(5.5, generalmath::floatingMean(vector,10));
+				Assert::AreEqual(5.5, generalmath::floatingMean(vector, 10));
+				Assert::AreEqual(5.5, generalmath::floatingMean(vector, 12));
 			}
 
 			TEST_METHOD(TestMethodFloatingMeanDoubleShort) {
@@ -48,6 +49,8 @@ namespace FPIControlUnitTest {
 					6.0, 7.0, 8.0, 9.0, 10.0
 				};
 				Assert::AreEqual(8.0, generalmath::floatingMean(vector, 5));
+				Assert::AreEqual(5.0, generalmath::floatingMean(vector, 5, vector.size() - 7));
+				Assert::AreEqual(5.0, generalmath::floatingMean(vector, 5, vector.size() - 3));
 			}
 
 			TEST_METHOD(TestMethodFloatingMeanDoubleLong) {
@@ -107,10 +110,12 @@ namespace FPIControlUnitTest {
 
 			TEST_METHOD(TestMethodFloatingStandardDeviationDoubleHalfShort) {
 				std::vector<double> vector = {
-					0.0, 1.0, 2.0, 1.0, 2.0, 1.0,
-					2.0, 1.0, 2.0, 1.0, 2.0, 1.5
+					2.0, 1.0, 2.0, 1.0, 2.0, 1.0,
+					2.0, 1.0, 2.0, 1.5, 2.0, 1.0
 				};
 				Assert::AreEqual(0.5, generalmath::floatingStandardDeviation(vector, 11));
+				Assert::AreEqual(0.5, generalmath::floatingStandardDeviation(vector, 9, 2));
+				Assert::AreEqual(0.5, generalmath::floatingStandardDeviation(vector, 11, 4));
 			}
 
 			TEST_METHOD(TestMethodFloatingStandardDeviationDoubleEmpty) {

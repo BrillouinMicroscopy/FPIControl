@@ -729,23 +729,53 @@ void MainWindow::updateLiveView() {
 
 void MainWindow::updateLockView() {
 	if (m_selectedView == VIEWS::LOCK) {
-		std::array<QVector<QPointF>, static_cast<int>(lockViewPlotTypes::COUNT)> data = m_lockingControl->m_lockDataPlot;
+
+		auto idx = (size_t)m_lockingControl->lockData.nextIndex ? (size_t)m_lockingControl->lockData.nextIndex - 1 : m_lockingControl->lockData.storageSize - 1;
+		auto passed = std::chrono::duration_cast<std::chrono::milliseconds>(
+			m_lockingControl->lockData.time[idx] - m_lockingControl->lockData.startTime
+		).count() / 1e3;
+
+
+		lockViewPlots[static_cast<int>(lockViewPlotTypes::VOLTAGE)]->append(
+			QPointF(passed, m_lockingControl->lockData.voltageDaq[idx])
+		);
+		lockViewPlots[static_cast<int>(lockViewPlotTypes::ERRORSIGNAL)]->append(
+			QPointF(passed, m_lockingControl->lockData.error[idx] / 100.0)
+		);
+		lockViewPlots[static_cast<int>(lockViewPlotTypes::AMPLITUDE)]->append(
+			QPointF(passed, m_lockingControl->lockData.amplitude[idx] / 1000.0)
+		);
+		lockViewPlots[static_cast<int>(lockViewPlotTypes::PIEZOVOLTAGE)]->append(
+			QPointF(passed, m_lockingControl->lockData.voltagePiezo[idx])
+		);
+
+		auto offset = m_lockingControl->lockData.storageSize - m_lockingControl->lockData.nextIndex;
+		lockViewPlots[static_cast<int>(lockViewPlotTypes::ERRORSIGNALMEAN)]->append(
+			QPointF(passed, generalmath::floatingMean(m_lockingControl->lockData.error, 50, offset) / 100.0)
+		);
+		lockViewPlots[static_cast<int>(lockViewPlotTypes::ERRORSIGNALSTD)]->append(
+			QPointF(passed, generalmath::floatingStandardDeviation(m_lockingControl->lockData.error, 50, offset) / 100.0)
+		);
+
+		// If there are more points than desired, remove the first one
 		gsl::index channel{ 0 };
 		foreach(QtCharts::QLineSeries* series, lockViewPlots) {
-			if (series->isVisible()) {
-				series->replace(data[channel]);
+			if (series->count() >= m_lockingControl->lockData.storageSize) {
+				series->remove(0);
 			}
 			++channel;
 		}
+
+		auto minX = lockViewPlots[0]->at(0).x();
+		auto maxX = lockViewPlots[0]->at(lockViewPlots[0]->count() - 1).x();
+		// Only show last 60 seconds in floating view
 		if (viewSettings.floatingView) {
-			// show last 60 seconds
-			double minX = data[0].back().x() - 60;
-			minX = (minX < 0) ? 0 : minX;
-			lockViewChart->axisX()->setRange(minX, data[0].back().x());
-		} else {
-			lockViewChart->axisX()->setRange(data[0][0].x(), data[0].back().x());
+			auto tmp = maxX - 60;
+			if (tmp > minX) {
+				minX = tmp;
+			}
 		}
-		
+		lockViewChart->axisX()->setRange(minX, maxX);
 	}
 }
 
