@@ -4,11 +4,15 @@
  * Public definitions
  */
 
+
+
+kcubepiezo::kcubepiezo(std::string serialNo) : m_serialNo(serialNo) {}
+
 void kcubepiezo::setDefaults() {
 	//PCC_SetZero(serialNo);										// set zero reference voltage
-	PCC_SetPositionControlMode(serialNo, defaultSettings.mode);		// set open loop mode
-	PCC_SetMaxOutputVoltage(serialNo, defaultSettings.maxVoltage);	// set maximum output voltage
-	PCC_SetVoltageSource(serialNo, defaultSettings.source);			// set voltage source
+	PCC_SetPositionControlMode(m_serialNo.c_str(), defaultSettings.mode);		// set open loop mode
+	PCC_SetMaxOutputVoltage(m_serialNo.c_str(), defaultSettings.maxVoltage);	// set maximum output voltage
+	PCC_SetVoltageSource(m_serialNo.c_str(), defaultSettings.source);			// set voltage source
 	if (defaultSettings.enabled) {
 		enable();
 	} else {
@@ -19,20 +23,20 @@ void kcubepiezo::setDefaults() {
 }
 
 void kcubepiezo::setVoltage(double voltage) {
-	double maxVoltage = PCC_GetMaxOutputVoltage(serialNo);
+	double maxVoltage = PCC_GetMaxOutputVoltage(m_serialNo.c_str());
 	double relativeVoltage = voltage / maxVoltage * (pow(2, 15) - 1) * 10;
 	m_outputVoltageIncrement = (int)relativeVoltage;
-	PCC_SetOutputVoltage(serialNo, (int)m_outputVoltageIncrement);
+	PCC_SetOutputVoltage(m_serialNo.c_str(), (int)m_outputVoltageIncrement);
 }
 
 double kcubepiezo::getVoltage() {
-	double maxVoltage = PCC_GetMaxOutputVoltage(serialNo);
+	double maxVoltage = PCC_GetMaxOutputVoltage(m_serialNo.c_str());
 	double relativeVoltage = getVoltageIncrement();
 	return maxVoltage * relativeVoltage / (pow(2, 15) - 1) / 10;	// [V] output voltage
 }
 
 void kcubepiezo::setVoltageIncrement(int voltage) {
-	PCC_SetOutputVoltage(serialNo, voltage);
+	PCC_SetOutputVoltage(m_serialNo.c_str(), voltage);
 }
 
 int kcubepiezo::getVoltageIncrement() {
@@ -41,12 +45,12 @@ int kcubepiezo::getVoltageIncrement() {
 }
 
 void kcubepiezo::setVoltageSource(PZ_InputSourceFlags source) {
-	PCC_SetVoltageSource(serialNo, source);
+	PCC_SetVoltageSource(m_serialNo.c_str(), source);
 }
 
 void kcubepiezo::incrementVoltage(int direction) {
 	m_outputVoltageIncrement += direction;
-	PCC_SetOutputVoltage(serialNo, m_outputVoltageIncrement);
+	PCC_SetOutputVoltage(m_serialNo.c_str(), m_outputVoltageIncrement);
 }
 
 void kcubepiezo::storeOutputVoltageIncrement() {
@@ -54,7 +58,7 @@ void kcubepiezo::storeOutputVoltageIncrement() {
 }
 
 void kcubepiezo::restoreOutputVoltageIncrement() {
-	PCC_SetOutputVoltage(serialNo, m_outputVoltageIncrement);
+	PCC_SetOutputVoltage(m_serialNo.c_str(), m_outputVoltageIncrement);
 }
 
 /*
@@ -95,9 +99,9 @@ void kcubepiezo::connect() {
 		}
 	}
 
-	if (PCC_Open(serialNo) == 0) {
+	if (PCC_Open(m_serialNo.c_str()) == 0) {
 		// start the device polling at 200ms intervals
-		PCC_StartPolling(serialNo, 200);
+		PCC_StartPolling(m_serialNo.c_str(), 200);
 		m_isConnected = true;
 		// set default values
 		setDefaults();
@@ -107,18 +111,18 @@ void kcubepiezo::connect() {
 
 void kcubepiezo::disconnect() {
 	// stop polling
-	PCC_StopPolling(serialNo);
-	PCC_Close(serialNo);
+	PCC_StopPolling(m_serialNo.c_str());
+	PCC_Close(m_serialNo.c_str());
 	m_isConnected = false;
 	emit(connected(m_isConnected));
 }
 
 void kcubepiezo::enable() {
-	PCC_Enable(serialNo);
+	PCC_Enable(m_serialNo.c_str());
 	defaultSettings.enabled = true;
 }
 
 void kcubepiezo::disable() {
-	PCC_Disable(serialNo);
+	PCC_Disable(m_serialNo.c_str());
 	defaultSettings.enabled = false;
 }

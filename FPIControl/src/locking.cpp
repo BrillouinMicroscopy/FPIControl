@@ -3,7 +3,7 @@
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMainWindow>
 
-Locking::Locking(QObject *parent, daq **dataAcquisition, kcubepiezo *piezoControl) :
+Locking::Locking(QObject *parent, daq **dataAcquisition, kcubepiezo **piezoControl) :
 	QObject(parent), m_dataAcquisition(dataAcquisition), m_piezoControl(piezoControl) {
 }
 
@@ -28,8 +28,8 @@ void Locking::startStopLocking() {
 		// this is necessary, because it seems, that getting the output voltage takes the external signal into account
 		// whereas setting it does not
 		//m_piezoControl->restoreOutputVoltageIncrement();
-		m_piezoControl->setVoltageSource(PZ_InputSourceFlags::PZ_ExternalSignal);
-		m_piezoVoltage = m_piezoControl->getVoltage();
+		(*m_piezoControl)->setVoltageSource(PZ_InputSourceFlags::PZ_ExternalSignal);
+		m_piezoVoltage = (*m_piezoControl)->getVoltage();
 		setLockState(LOCKSTATE::ACTIVE);
 	} else {
 		disableLocking(LOCKSTATE::INACTIVE);
@@ -41,7 +41,7 @@ void Locking::toggleOffsetCompensation(bool compensate) {
 }
 
 void Locking::disableLocking(LOCKSTATE lockstate) {
-	m_piezoControl->setVoltageSource(PZ_InputSourceFlags::PZ_ExternalSignal);
+	(*m_piezoControl)->setVoltageSource(PZ_InputSourceFlags::PZ_ExternalSignal);
 	m_daqVoltage = 0;
 	// set output voltage of the DAQ
 	(*m_dataAcquisition)->setOutputVoltage(m_daqVoltage);
@@ -118,7 +118,7 @@ void Locking::startScan() {
 		scanData.m_running = true;
 		scanData.m_abort = false;
 		// set piezo voltage to start value
-		m_piezoControl->setVoltage(scanData.voltages[scanData.pass]);
+		(*m_piezoControl)->setVoltage(scanData.voltages[scanData.pass]);
 		passTimer.start();
 		scanTimer->start(1000);
 		emit s_scanRunning(scanData.m_running);
@@ -164,7 +164,7 @@ void Locking::scan() {
 	emit s_scanPassAcquired();
 	// if scan is not done, set temperature to new value, else annouce finished scan
 	if (scanData.pass < scanData.nrSteps) {
-		m_piezoControl->setVoltage(scanData.voltages[scanData.pass]);
+		(*m_piezoControl)->setVoltage(scanData.voltages[scanData.pass]);
 	} else {
 		scanData.m_running = false;
 		scanTimer->stop();
@@ -235,11 +235,11 @@ void Locking::lock() {
 			if (lockSettings.compensating & (m_compensationTimer > lockSettings.compensationTimeout)) {
 				m_compensationTimer = 0;
 				if (m_daqVoltage > 0) {
-					m_piezoControl->incrementVoltage(1);
-					m_piezoVoltage = m_piezoControl->getVoltage();
+					(*m_piezoControl)->incrementVoltage(1);
+					m_piezoVoltage = (*m_piezoControl)->getVoltage();
 				} else {
-					m_piezoControl->incrementVoltage(-1);
-					m_piezoVoltage = m_piezoControl->getVoltage();
+					(*m_piezoControl)->incrementVoltage(-1);
+					m_piezoVoltage = (*m_piezoControl)->getVoltage();
 				}
 			}
 		} else {

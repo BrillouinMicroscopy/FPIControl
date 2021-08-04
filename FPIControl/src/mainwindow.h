@@ -97,6 +97,7 @@ public slots:
 	void handleMarkerClicked();
 
 private:
+	void initPiezoControl();
 	void initDAQ();
 	void updateSamplingRates();
 	std::string getSamplingRateString(double samplingRate);
@@ -104,6 +105,7 @@ private:
 	PS_TYPES m_daqType{ PS_TYPES::MODEL_PS2000A };
 	PS_TYPES m_daqTypeTemporary = m_daqType;
 	QComboBox* m_daqDropdown{ nullptr };
+	QLineEdit* m_piezoSerialInput{ nullptr };
 
 	QDialog* settingsDialog{ nullptr };
 	bool m_isDAQConnected{ false };
@@ -118,8 +120,9 @@ private:
 	QVector<QtCharts::QLineSeries*> lockViewPlots;
 	QVector<QtCharts::QLineSeries*> scanViewPlots;
 	daq* m_dataAcquisition{ nullptr };
-	kcubepiezo* m_piezoControl = new kcubepiezo();
-	Locking* m_lockingControl = new Locking(nullptr, &m_dataAcquisition, m_piezoControl);
+	kcubepiezo* m_piezoControl{ nullptr };
+	std::string m_serialNo{};
+	Locking* m_lockingControl = new Locking(nullptr, &m_dataAcquisition, &m_piezoControl);
 	VIEWS m_selectedView{ VIEWS::LIVE };	// selection of the view
 	IndicatorWidget* lockIndicator;
 	QLabel* compensationIndicator;
@@ -187,7 +190,7 @@ private slots:
 
 	void on_actionAbout_triggered();
 
-	void on_actionSettings_DAQ_triggered();
+	void on_actionSettings_triggered();
 	void cancelSettings();
 	void saveSettings();
 	void initSettingsDialog();
@@ -197,6 +200,12 @@ private slots:
 	void piezoConnectionChanged(bool connected);
 	void updatePiezoSettings(PIEZO_SETTINGS);
 	void daqConnectionChanged(bool connected);
+
+	/*
+	 * Save and restore application settings
+	 */
+	void writeSettings();
+	void readSettings();
 };
 
 #endif // MAINWINDOW_H

@@ -19,6 +19,8 @@ class kcubepiezo : public QObject {
 	Q_OBJECT
 
 public:
+	explicit kcubepiezo(std::string serialNo);
+
 	void setDefaults();
 	void setVoltage(double voltage);
 	double getVoltage();
@@ -29,7 +31,7 @@ public:
 	void storeOutputVoltageIncrement();
 	void restoreOutputVoltageIncrement();
 
-	char const * serialNo{ "29501039" };	// serial number of the KCube Piezo device (can be found in Kinesis) TODO: make this a changeable parameter
+	std::string m_serialNo;	// serial number of the KCube Piezo device (can be found in Kinesis)
 
 	PIEZO_SETTINGS defaultSettings;
 

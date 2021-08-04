@@ -1224,10 +1224,11 @@
     </property>
     <addaction name="actionConnect_DAQ"/>
     <addaction name="actionDisconnect_DAQ"/>
-    <addaction name="actionSettings_DAQ"/>
     <addaction name="separator"/>
     <addaction name="actionConnect_Piezo"/>
     <addaction name="actionDisconnect_Piezo"/>
+    <addaction name="separator"/>
+    <addaction name="actionSettings"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -1270,7 +1271,7 @@
   </action>
   <action name="actionConnect_DAQ">
    <property name="text">
-    <string>Connect</string>
+    <string>Connect DAQ</string>
    </property>
   </action>
   <action name="actionDisconnect_DAQ">
@@ -1278,10 +1279,10 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Disconnect</string>
+    <string>Disconnect DAQ</string>
    </property>
   </action>
-  <action name="actionSettings_DAQ">
+  <action name="actionSettings">
    <property name="text">
     <string>Settings</string>
    </property>
