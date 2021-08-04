@@ -193,8 +193,8 @@ MainWindow::MainWindow(QWidget* parent) noexcept :
 	scanViewChart->layout()->setContentsMargins(0, 0, 0, 0);
 
 	// set live view chart as default chart
-    ui->plotAxes->setChart(liveViewChart);
-    ui->plotAxes->setRenderHint(QPainter::Antialiasing);
+	ui->plotAxes->setChart(liveViewChart);
+	ui->plotAxes->setRenderHint(QPainter::Antialiasing);
 	ui->plotAxes->setRubberBand(QtCharts::QChartView::RectangleRubberBand);
 
 	// set default values of GUI elements
@@ -255,24 +255,39 @@ MainWindow::MainWindow(QWidget* parent) noexcept :
 	ui->floatingViewLabel->hide();
 	ui->floatingViewCheckBox->hide();
 
+	readSettings();
+
+	initPiezoControl();
 	initDAQ();
 	initSettingsDialog();
 
 	// start acquisition thread
 	m_acquisitionThread.startWorker(m_lockingControl);
-	m_acquisitionThread.startWorker(m_piezoControl);
-
-	QMetaObject::invokeMethod(m_piezoControl, [&m_piezoControl = m_piezoControl]() { m_piezoControl->connect(); }, Qt::AutoConnection);
 }
 
 MainWindow::~MainWindow() {
+	writeSettings();
 	m_acquisitionThread.exit();
 	m_acquisitionThread.wait();
-    delete ui;
+	delete ui;
 }
 
 void MainWindow::on_actionQuit_triggered() {
 	QApplication::quit();
+}
+
+void MainWindow::initPiezoControl() {
+	// deinitialize PiezoControl if necessary
+	if (m_piezoControl) {
+		m_piezoControl->deleteLater();
+		m_piezoControl = nullptr;
+	}
+
+	m_piezoControl = new kcubepiezo(m_serialNo);
+
+	m_acquisitionThread.startWorker(m_piezoControl);
+
+	QMetaObject::invokeMethod(m_piezoControl, [&m_piezoControl = m_piezoControl]() { m_piezoControl->connect(); }, Qt::AutoConnection);
 }
 
 void MainWindow::initDAQ() {
@@ -370,14 +385,18 @@ void MainWindow::on_actionAbout_triggered() {
 	QMessageBox::about(this, tr("About FPIControl"), str);
 }
 
-void MainWindow::on_actionSettings_DAQ_triggered() {
+void MainWindow::on_actionSettings_triggered() {
 	m_daqDropdown->setCurrentIndex((int)m_daqType);
+	m_piezoSerialInput->setText(QString::fromStdString(m_serialNo));
 	settingsDialog->show();
 }
 
 void MainWindow::saveSettings() {
 	m_daqType = m_daqTypeTemporary;
+	m_serialNo = m_piezoSerialInput->text().toStdString();
 	settingsDialog->hide();
+	writeSettings();
+	initPiezoControl();
 	initDAQ();
 }
 
@@ -398,7 +417,7 @@ void MainWindow::initSettingsDialog() {
 	daqWidget->setMinimumHeight(100);
 	daqWidget->setMinimumWidth(400);
 	QGroupBox *box = new QGroupBox(daqWidget);
-	box->setTitle("Scanning device");
+	box->setTitle("Data acquisition board");
 	box->setMinimumHeight(100);
 	box->setMinimumWidth(400);
 
@@ -425,6 +444,24 @@ void MainWindow::initSettingsDialog() {
 		this,
 		&MainWindow::selectDAQ
 	);
+
+	QWidget* piezoWidget = new QWidget();
+	piezoWidget->setMinimumHeight(100);
+	piezoWidget->setMinimumWidth(400);
+	QGroupBox* piezo_box = new QGroupBox(piezoWidget);
+	piezo_box->setTitle("Piezo controller");
+	piezo_box->setMinimumHeight(100);
+	piezo_box->setMinimumWidth(400);
+
+	vLayout->addWidget(piezoWidget);
+
+	QHBoxLayout* piezo_layout = new QHBoxLayout(piezo_box);
+
+	QLabel* piezo_label = new QLabel("Serial number");
+	piezo_layout->addWidget(piezo_label);
+
+	m_piezoSerialInput = new QLineEdit();
+	piezo_layout->addWidget(m_piezoSerialInput);
 
 	QWidget *buttonWidget = new QWidget();
 	vLayout->addWidget(buttonWidget);
@@ -905,4 +942,46 @@ void MainWindow::on_scanButton_clicked() {
 	} else {
 		m_lockingControl->scanData.m_abort = true;
 	}
+}
+
+void MainWindow::writeSettings() {
+	QSettings settings(QSettings::IniFormat, QSettings::UserScope,
+		"Guck Lab", "FPIControl");
+
+	auto daq = QString{};
+	switch (m_daqType) {
+	case PS_TYPES::MODEL_PS2000:
+		daq = "PS2000";
+		break;
+	case PS_TYPES::MODEL_PS2000A:
+		daq = "PS2000A";
+		break;
+	default:
+		daq = "PS2000A";
+		break;
+	}
+
+	settings.beginGroup("devices");
+	settings.setValue("daq", daq);
+	settings.setValue("kcube-piezo-serial", QString::fromStdString(m_serialNo));
+	settings.endGroup();
+}
+
+void MainWindow::readSettings() {
+	QSettings settings(QSettings::IniFormat, QSettings::UserScope,
+		"Guck Lab", "FPIControl");
+
+	settings.beginGroup("devices");
+	QVariant kcube_piezo_serial = settings.value("kcube-piezo-serial");
+	m_serialNo = kcube_piezo_serial.toString().toStdString();
+
+	QVariant daq = settings.value("daq");
+	if (daq == "PS2000") {
+		m_daqType = PS_TYPES::MODEL_PS2000;
+	} else if (daq == "PS2000A") {
+		m_daqType = PS_TYPES::MODEL_PS2000A;
+	} else {
+		m_daqType = PS_TYPES::MODEL_PS2000A;
+	}
+	settings.endGroup();
 }

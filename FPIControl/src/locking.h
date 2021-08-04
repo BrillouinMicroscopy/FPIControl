@@ -100,7 +100,7 @@ class Locking : public QObject {
 	Q_OBJECT
 
 	public:
-		explicit Locking(QObject *parent, daq **dataAcquisition, kcubepiezo *piezoControl);
+		explicit Locking(QObject *parent, daq **dataAcquisition, kcubepiezo **piezoControl);
 		void setLockState(LOCKSTATE lockstate = LOCKSTATE::INACTIVE);
 		void setScanParameters(SCANPARAMETERS type, double value);
 		void setLockParameters(LOCKPARAMETERS type, double value);
@@ -119,7 +119,7 @@ class Locking : public QObject {
 		void toggleOffsetCompensation(bool);
 
 	private:
-		kcubepiezo* m_piezoControl{ nullptr };
+		kcubepiezo** m_piezoControl;
 		daq** m_dataAcquisition;
 		PDH pdh;
 		bool m_acquisitionRunning{ false };
