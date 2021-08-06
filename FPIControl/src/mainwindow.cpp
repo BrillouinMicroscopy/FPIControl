@@ -758,12 +758,10 @@ void MainWindow::updateLockView() {
 		);
 
 		// If there are more points than desired, remove the first one
-		gsl::index channel{ 0 };
 		foreach(QtCharts::QLineSeries* series, lockViewPlots) {
 			if (series->count() >= m_lockingControl->lockData.storageSize) {
 				series->remove(0);
 			}
-			++channel;
 		}
 
 		auto minX = lockViewPlots[0]->at(0).x();
