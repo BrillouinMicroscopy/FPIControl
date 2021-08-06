@@ -8,6 +8,7 @@
 #include <complex>
 #include <cmath>
 #include <algorithm>
+#include <gsl/gsl>
 
 class generalmath {
 public:
@@ -144,6 +145,10 @@ public:
 			*x = value;
 		}
 		return xs;
+	}
+
+	static gsl::index indexWrapped(int index, int size) {
+		return (index % size + size) % size;
 	}
 };
 

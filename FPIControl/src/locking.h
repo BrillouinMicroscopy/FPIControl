@@ -61,7 +61,7 @@ typedef struct LOCK_DATA {
 	double iError{ 0 };					// [1]	integral value of the error signal
 	int storageDuration{ 4 * 3600 };	// [s]	maximum time to store data for (after this time, data from the start will be overwritten)
 	int storageSize;					//		size of the storage array (depends on storageDuration and lockSettings.lockingTimeout)
-	int nextIndex{ 0 };					//		the index to write to next
+	gsl::index nextIndex{ 0 };			//		the index to write to next
 	std::chrono::time_point<std::chrono::system_clock> startTime;
 } LOCK_DATA;
 
