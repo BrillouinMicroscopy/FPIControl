@@ -17,10 +17,18 @@
 #include "version.h"
 
 MainWindow::MainWindow(QWidget* parent) noexcept :
-	QMainWindow(parent),
-	ui(new Ui::MainWindow) {
-
+	QMainWindow(parent), ui(new Ui::MainWindow) {
 	ui->setupUi(this);
+
+	// Set window title
+	auto title = QString{ "FPIControl v%1.%2.%3" }.arg(Version::MAJOR).arg(Version::MINOR).arg(Version::PATCH);
+	if (Version::PRERELEASE.length() > 0) {
+		title += "-" + QString::fromStdString(Version::PRERELEASE);
+	}
+	#ifdef _DEBUG
+		title += QString{ " - Debug" };
+	#endif
+	this->setWindowTitle(title);
 
 	qRegisterMetaType<ACQUISITION_PARAMETERS>("ACQUISITION_PARAMETERS");
 	qRegisterMetaType<LOCKSTATE>("LOCKSTATE");
@@ -372,15 +380,31 @@ std::string MainWindow::getSamplingRateString(double samplingRate) {
 
 
 void MainWindow::on_actionAbout_triggered() {
-	QString str = QString("FPIControl Version %1.%2.%3 <br> Build from commit: <a href='%4'>%5</a><br>Author: <a href='mailto:%6?subject=FPIControl'>%7</a><br>Date: %8")
+	QString clean = "Yes";
+	if (Version::VerDirty) {
+		clean = "No";
+	}
+	auto preRelease = QString{ "" };
+	if (Version::PRERELEASE.length() > 0) {
+		preRelease = QString::fromStdString("-" + Version::PRERELEASE);
+	}
+
+	auto debugString = QString{ "" };
+#ifdef _DEBUG
+	debugString = QString{ " - Debug" };
+#endif
+	QString str = QString("FPIControl v%1.%2.%3%4%11 <br> Build from commit: <a href='%5'>%6</a><br>Clean build: %7<br>Author: <a href='mailto:%8?subject=FPIControl'>%9</a><br>Date: %10")
 		.arg(Version::MAJOR)
 		.arg(Version::MINOR)
 		.arg(Version::PATCH)
+		.arg(preRelease)
 		.arg(Version::Url.c_str())
 		.arg(Version::Commit.c_str())
+		.arg(clean)
 		.arg(Version::AuthorEmail.c_str())
 		.arg(Version::Author.c_str())
-		.arg(Version::Date.c_str());
+		.arg(Version::Date.c_str())
+		.arg(debugString);
 
 	QMessageBox::about(this, tr("About FPIControl"), str);
 }
