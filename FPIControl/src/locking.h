@@ -43,6 +43,7 @@ typedef struct LOCK_SETTINGS {
 	double derivative{ 0 };			//		control parameter of the derivative part
 	double frequency{ 5000 };		// [Hz] approx. frequency of the reference signal
 	double phase{ 180 };			// [°]	phase shift between reference and detector signal
+	int lockingTimeout{ 100 };		// [ms]	time until next locking run
 	bool compensate{ true };		//		compensate the offset?
 	int compensationTimeout{ 25 };	//		cycles until next compensation
 	bool compensating{ false };		//		is it currently compensating?
@@ -53,10 +54,15 @@ typedef struct LOCK_SETTINGS {
 
 typedef struct LOCK_DATA {
 	std::vector<std::chrono::time_point<std::chrono::system_clock>> time;		// [s]	time vector
-	std::vector<int32_t> voltage;	// [µV]	output voltage (<int32_t> is sufficient for this)
-	std::vector<int32_t> amplitude;	// [µV]	measured intensity (<int32_t> is fine)
-	std::vector<double> error;		// [1]	PDH error signal
-	double iError{ 0 };				// [1]	integral value of the error signal
+	std::vector<double> voltageDaq;	// [V]	output voltage
+	std::vector<int32_t> amplitude;		// [µV]	measured intensity (<int32_t> is fine)
+	std::vector<double> error;			// [1]	PDH error signal
+	std::vector<double> voltagePiezo;	// [V]	output voltage
+	double iError{ 0 };					// [1]	integral value of the error signal
+	int storageDuration{ 4 * 3600 };	// [s]	maximum time to store data for (after this time, data from the start will be overwritten)
+	int storageSize;					//		size of the storage array (depends on storageDuration and lockSettings.lockingTimeout)
+	int nextIndex{ 0 };					//		the index to write to next
+	std::chrono::time_point<std::chrono::system_clock> startTime;
 } LOCK_DATA;
 
 enum class liveViewPlotTypes {
@@ -108,7 +114,7 @@ class Locking : public QObject {
 		SCAN_DATA scanData;
 		LOCK_SETTINGS getLockSettings();
 
-		std::array<QVector<QPointF>, static_cast<int>(lockViewPlotTypes::COUNT)> m_lockDataPlot;
+		LOCK_DATA lockData;
 
 	public slots:
 		void init();
@@ -129,7 +135,6 @@ class Locking : public QObject {
 		QElapsedTimer passTimer;
 		SCAN_SETTINGS scanSettings;
 		LOCK_SETTINGS lockSettings;
-		LOCK_DATA lockData;
 
 		double m_daqVoltage{ 0 };
 		double m_piezoVoltage{ 0 };

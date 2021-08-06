@@ -5,6 +5,15 @@
 
 Locking::Locking(QObject *parent, daq **dataAcquisition, kcubepiezo **piezoControl) :
 	QObject(parent), m_dataAcquisition(dataAcquisition), m_piezoControl(piezoControl) {
+
+	// Calculate the maximum storage size and resize the arrays accordingly
+	lockData.storageSize = (int)((1000 * lockData.storageDuration) / lockSettings.lockingTimeout);
+	lockData.time.resize(lockData.storageSize);
+	lockData.voltageDaq.resize(lockData.storageSize);
+	lockData.voltagePiezo.resize(lockData.storageSize);
+	lockData.amplitude.resize(lockData.storageSize);
+	lockData.error.resize(lockData.storageSize);
+	lockData.startTime = std::chrono::system_clock::now();
 }
 
 void Locking::startStopAcquireLocking() {
@@ -14,7 +23,7 @@ void Locking::startStopAcquireLocking() {
 		lockingTimer->stop();
 	} else {
 		m_isAcquireLockingRunning = true;
-		lockingTimer->start(100);
+		lockingTimer->start(lockSettings.lockingTimeout);
 	}
 	emit(s_acquireLockingRunning(m_isAcquireLockingRunning));
 }
@@ -209,15 +218,13 @@ void Locking::lock() {
 
 	double error = pdh.getError(tau, reference);
 
-	// write data to struct for storage
-	lockData.amplitude.push_back(amplitude);
 
 	if (lockSettings.state == LOCKSTATE::ACTIVE) {
 		double dError = 0;
 		if (lockData.error.size() > 0) {
-			double dt = std::chrono::duration_cast<std::chrono::milliseconds>(now - lockData.time.back()).count() / 1e3;
-			lockData.iError += 1e-3 * lockSettings.integral * (lockData.error.back() + error) * (dt) / 2;
-			dError = (error - lockData.error.back()) / dt;
+			double dt = std::chrono::duration_cast<std::chrono::milliseconds>(now - lockData.time[lockData.nextIndex - 1]).count() / 1e3;
+			lockData.iError += 1e-3 * lockSettings.integral * (lockData.error[lockData.nextIndex - 1] + error) * (dt) / 2;
+			dError = (error - lockData.error[lockData.nextIndex - 1]) / dt;
 		}
 		m_daqVoltage += (1e-3 * lockSettings.proportional * error + lockData.iError + 1e-3 * lockSettings.derivative * dError) / 100;
 
@@ -260,18 +267,17 @@ void Locking::lock() {
 	}
 
 	// write data to struct for storage
-	lockData.time.push_back(now);
-	lockData.error.push_back(error);
-	lockData.voltage.push_back(m_daqVoltage);
+	lockData.amplitude[lockData.nextIndex] = amplitude;
+	lockData.time[lockData.nextIndex] = now;
+	lockData.error[lockData.nextIndex] = error;
+	lockData.voltageDaq[lockData.nextIndex] = m_daqVoltage;
+	lockData.voltagePiezo[lockData.nextIndex] = m_piezoVoltage;
+	lockData.nextIndex++;
 
-	double passed = std::chrono::duration_cast<std::chrono::milliseconds>(now - lockData.time[0]).count() / 1e3;	// store passed time in seconds
-
-	m_lockDataPlot[static_cast<int>(lockViewPlotTypes::VOLTAGE)].append(QPointF(passed, m_daqVoltage));
-	m_lockDataPlot[static_cast<int>(lockViewPlotTypes::ERRORSIGNAL)].append(QPointF(passed, error / 100));
-	m_lockDataPlot[static_cast<int>(lockViewPlotTypes::AMPLITUDE)].append(QPointF(passed, amplitude / static_cast<double>(1000)));
-	m_lockDataPlot[static_cast<int>(lockViewPlotTypes::PIEZOVOLTAGE)].append(QPointF(passed, m_piezoVoltage));
-	m_lockDataPlot[static_cast<int>(lockViewPlotTypes::ERRORSIGNALMEAN)].append(QPointF(passed, generalmath::floatingMean(lockData.error, 50) / 100));
-	m_lockDataPlot[static_cast<int>(lockViewPlotTypes::ERRORSIGNALSTD)].append(QPointF(passed, generalmath::floatingStandardDeviation(lockData.error, 50) / 100));
+	// If the next index to write to is outside of the array, we wrap around to the start
+	if (lockData.nextIndex >= lockData.storageSize) {
+		lockData.nextIndex = 0;
+	}
 
 	emit(locked());
 }
