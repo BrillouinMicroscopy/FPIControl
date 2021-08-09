@@ -1,12 +1,12 @@
 Param (
   [String]$Project='.',
   [String]$VERSION_MAJOR = 0,
-  [String]$VERSION_MINOR = 1,
+  [String]$VERSION_MINOR = 2,
   [String]$VERSION_PATCH = 0,
   [String]$VERSION_PRERELEASE = "",
   [String]$Namespace = 'Version',
   [String]$GitRoot,
-  $Author = "Raimund Schlüßler",
+  $Author = "Raimund Schlï¿½ï¿½ler",
   $AuthorEmail = "raimund.schluessler@tu-dresden.de",
   [String]$HeaderFile = "src/version.h",
   [String]$VerPrefix = "https://github.com/BrillouinMicroscopy/FPIControl/commit/"
