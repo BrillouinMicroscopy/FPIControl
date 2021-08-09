@@ -754,23 +754,23 @@ void MainWindow::updateLiveView() {
 void MainWindow::updateLockView() {
 	if (m_selectedView == VIEWS::LOCK) {
 
-		auto idx = (size_t)m_lockingControl->lockData.nextIndex ? (size_t)m_lockingControl->lockData.nextIndex - 1 : m_lockingControl->lockData.storageSize - 1;
+		auto prevIndex = generalmath::indexWrapped((int)m_lockingControl->lockData.nextIndex - 1, m_lockingControl->lockData.storageSize);
 		auto passed = std::chrono::duration_cast<std::chrono::milliseconds>(
-			m_lockingControl->lockData.time[idx] - m_lockingControl->lockData.startTime
+			m_lockingControl->lockData.time[prevIndex] - m_lockingControl->lockData.startTime
 		).count() / 1e3;
 
 
 		lockViewPlots[static_cast<int>(lockViewPlotTypes::VOLTAGE)]->append(
-			QPointF(passed, m_lockingControl->lockData.voltageDaq[idx])
+			QPointF(passed, m_lockingControl->lockData.voltageDaq[prevIndex])
 		);
 		lockViewPlots[static_cast<int>(lockViewPlotTypes::ERRORSIGNAL)]->append(
-			QPointF(passed, m_lockingControl->lockData.error[idx] / 100.0)
+			QPointF(passed, m_lockingControl->lockData.error[prevIndex] / 100.0)
 		);
 		lockViewPlots[static_cast<int>(lockViewPlotTypes::AMPLITUDE)]->append(
-			QPointF(passed, m_lockingControl->lockData.amplitude[idx] / 1000.0)
+			QPointF(passed, m_lockingControl->lockData.amplitude[prevIndex] / 1000.0)
 		);
 		lockViewPlots[static_cast<int>(lockViewPlotTypes::PIEZOVOLTAGE)]->append(
-			QPointF(passed, m_lockingControl->lockData.voltagePiezo[idx])
+			QPointF(passed, m_lockingControl->lockData.voltagePiezo[prevIndex])
 		);
 
 		auto offset = m_lockingControl->lockData.storageSize - m_lockingControl->lockData.nextIndex;

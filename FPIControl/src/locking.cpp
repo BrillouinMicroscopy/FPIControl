@@ -222,9 +222,10 @@ void Locking::lock() {
 	if (lockSettings.state == LOCKSTATE::ACTIVE) {
 		double dError = 0;
 		if (lockData.error.size() > 0) {
-			double dt = std::chrono::duration_cast<std::chrono::milliseconds>(now - lockData.time[lockData.nextIndex - 1]).count() / 1e3;
-			lockData.iError += 1e-3 * lockSettings.integral * (lockData.error[lockData.nextIndex - 1] + error) * (dt) / 2;
-			dError = (error - lockData.error[lockData.nextIndex - 1]) / dt;
+			auto prevIndex = generalmath::indexWrapped((int)lockData.nextIndex - 1, lockData.storageSize);
+			double dt = std::chrono::duration_cast<std::chrono::milliseconds>(now - lockData.time[prevIndex]).count() / 1e3;
+			lockData.iError += 1e-3 * lockSettings.integral * (lockData.error[prevIndex] + error) * (dt) / 2;
+			dError = (error - lockData.error[prevIndex]) / dt;
 		}
 		m_daqVoltage += (1e-3 * lockSettings.proportional * error + lockData.iError + 1e-3 * lockSettings.derivative * dError) / 100;
 

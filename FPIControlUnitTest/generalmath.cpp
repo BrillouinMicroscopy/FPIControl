@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "..\FPIControl\src\generalmath.h"
+#include <gsl/gsl>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
@@ -196,6 +197,14 @@ namespace FPIControlUnitTest {
 			TEST_METHOD(TestMethodMaxInt) {
 				std::vector<int> vector = { -1, 1, 2, -6 };
 				Assert::AreEqual(2, generalmath::max(vector));
+			}
+
+			TEST_METHOD(TestMethodPrevIndexWrapped) {
+				Assert::AreEqual(gsl::index{ 9 }, generalmath::indexWrapped(-1, 10));
+				Assert::AreEqual(gsl::index{ 0 }, generalmath::indexWrapped(0, 10));
+				Assert::AreEqual(gsl::index{ 1 }, generalmath::indexWrapped(1, 10));
+				Assert::AreEqual(gsl::index{ 9 }, generalmath::indexWrapped(9, 10));
+				Assert::AreEqual(gsl::index{ 0 }, generalmath::indexWrapped(10, 10));
 			}
 	};
 }
