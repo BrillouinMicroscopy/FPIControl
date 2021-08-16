@@ -6,7 +6,7 @@ Param (
   [String]$VERSION_PRERELEASE = "",
   [String]$Namespace = 'Version',
   [String]$GitRoot,
-  $Author = "Raimund Schlï¿½ï¿½ler",
+  $Author = "Raimund Schlüßler",
   $AuthorEmail = "raimund.schluessler@tu-dresden.de",
   [String]$HeaderFile = "src/version.h",
   [String]$VerPrefix = "https://github.com/BrillouinMicroscopy/FPIControl/commit/"
