@@ -12,6 +12,7 @@ typedef struct PIEZO_SETTINGS {
 	short maxVoltage{ 750 };											// maximum output voltage
 	PZ_InputSourceFlags source{ PZ_InputSourceFlags::PZ_Potentiometer };// voltage input source
 	PZ_ControlModeTypes mode{ PZ_ControlModeTypes::PZ_OpenLoop };		// mode type
+	HubAnalogueModes driveInput{ HubAnalogueModes::ExtSignalSMA };		// analogue input mode
 	bool enabled{ true };
 } PIEZO_SETTINGS;
 

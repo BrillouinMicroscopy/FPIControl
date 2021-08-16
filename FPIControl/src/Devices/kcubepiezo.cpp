@@ -13,6 +13,7 @@ void kcubepiezo::setDefaults() {
 	PCC_SetPositionControlMode(m_serialNo.c_str(), defaultSettings.mode);		// set open loop mode
 	PCC_SetMaxOutputVoltage(m_serialNo.c_str(), defaultSettings.maxVoltage);	// set maximum output voltage
 	PCC_SetVoltageSource(m_serialNo.c_str(), defaultSettings.source);			// set voltage source
+	PCC_SetHubAnalogInput(m_serialNo.c_str(), defaultSettings.driveInput);		// set the drive input
 	if (defaultSettings.enabled) {
 		enable();
 	} else {
