@@ -975,9 +975,8 @@ void MainWindow::piezoConnectionChanged(bool connected) {
 }
 
 void MainWindow::updatePiezoSettings(PIEZO_SETTINGS settings) {
-	ui->enablePiezoCheckBox->blockSignals(true);
+	const QSignalBlocker blocker(ui->enablePiezoCheckBox);
 	ui->enablePiezoCheckBox->setChecked(settings.enabled);
-	ui->enablePiezoCheckBox->blockSignals(false);
 }
 
 void MainWindow::on_enablePiezoCheckBox_clicked(const bool checked) {
