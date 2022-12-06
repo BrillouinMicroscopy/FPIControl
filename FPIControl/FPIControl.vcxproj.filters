@@ -53,15 +53,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="GeneratedFiles\Debug\moc_mainwindow.cpp">
-      <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug\moc_locking.cpp">
-      <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug\moc_thread.cpp">
-      <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
+    
+    
+    
     <ClCompile Include="src\locking.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -83,39 +77,17 @@
     <ClCompile Include="src\Devices\kcubepiezo.cpp">
       <Filter>Source Files\Devices</Filter>
     </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug\moc_daq.cpp">
-      <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_daq.cpp">
-      <Filter>Generated Files\Release</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_locking.cpp">
-      <Filter>Generated Files\Release</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_mainwindow.cpp">
-      <Filter>Generated Files\Release</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug\moc_DAQ_PS2000.cpp">
-      <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_DAQ_PS2000.cpp">
-      <Filter>Generated Files\Release</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug\moc_DAQ_PS2000A.cpp">
-      <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_DAQ_PS2000A.cpp">
-      <Filter>Generated Files\Release</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_kcubepiezo.cpp">
-      <Filter>Generated Files\Release</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_thread.cpp">
-      <Filter>Generated Files\Release</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug\moc_kcubepiezo.cpp">
-      <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="debug\moc_predefs.h.cbt">
@@ -124,30 +96,30 @@
     <CustomBuild Include="release\moc_predefs.h.cbt">
       <Filter>Generated Files</Filter>
     </CustomBuild>
-    <CustomBuild Include="src\locking.h">
+    <QtMoc Include="src\locking.h">
       <Filter>Header Files</Filter>
-    </CustomBuild>
-    <CustomBuild Include="src\mainwindow.h">
+    </QtMoc>
+    <QtMoc Include="src\mainwindow.h">
       <Filter>Header Files</Filter>
-    </CustomBuild>
-    <CustomBuild Include="src\mainwindow.ui">
+    </QtMoc>
+    <QtUic Include="src\mainwindow.ui">
       <Filter>Form Files</Filter>
-    </CustomBuild>
-    <CustomBuild Include="src\Devices\daq.h">
+    </QtUic>
+    <QtMoc Include="src\Devices\daq.h">
       <Filter>Header Files\Devices</Filter>
-    </CustomBuild>
-    <CustomBuild Include="src\Devices\DAQ_PS2000.h">
+    </QtMoc>
+    <QtMoc Include="src\Devices\DAQ_PS2000.h">
       <Filter>Header Files\Devices</Filter>
-    </CustomBuild>
-    <CustomBuild Include="src\Devices\DAQ_PS2000A.h">
+    </QtMoc>
+    <QtMoc Include="src\Devices\DAQ_PS2000A.h">
       <Filter>Header Files\Devices</Filter>
-    </CustomBuild>
-    <CustomBuild Include="src\thread.h">
+    </QtMoc>
+    <QtMoc Include="src\thread.h">
       <Filter>Header Files</Filter>
-    </CustomBuild>
-    <CustomBuild Include="src\Devices\kcubepiezo.h">
+    </QtMoc>
+    <QtMoc Include="src\Devices\kcubepiezo.h">
       <Filter>Header Files\Devices</Filter>
-    </CustomBuild>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\circularBuffer.h">
@@ -165,9 +137,7 @@
     <ClInclude Include="src\version.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GeneratedFiles\ui_mainwindow.h">
-      <Filter>Generated Files</Filter>
-    </ClInclude>
+    
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="src\FPIControl.rc" />
