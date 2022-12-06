@@ -140,7 +140,7 @@ class Locking : public QObject {
 		double m_piezoVoltage{ 0 };
 		int m_compensationTimer{ 0 };
 		
-		void Locking::disableLocking(LOCKSTATE lockstate);
+		void disableLocking(LOCKSTATE lockstate);
 
 	private slots:
 		void lock();

@@ -15,7 +15,8 @@
     <RootNamespace>FPIControl</RootNamespace>
     <Keyword>QtVS_v304</Keyword>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-  <QtMsBuild Condition="'$(QtMsBuild)'=='' or !Exists('$(QtMsBuild)\qt.targets')">$(MSBuildProjectDirectory)\QtMsBuild</QtMsBuild></PropertyGroup>
+    <QtMsBuild Condition="'$(QtMsBuild)'=='' or !Exists('$(QtMsBuild)\qt.targets')">$(MSBuildProjectDirectory)\QtMsBuild</QtMsBuild>
+  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <PlatformToolSet>v143</PlatformToolSet>
@@ -35,7 +36,10 @@
     <IntermediateDirectory>debug\</IntermediateDirectory>
     <PrimaryOutput>FPIControl</PrimaryOutput>
   </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" /><Target Name="QtMsBuildNotFound" BeforeTargets="CustomBuild;ClCompile" Condition="!Exists('$(QtMsBuild)\qt.targets') or !Exists('$(QtMsBuild)\qt.props')"><Message Importance="High" Text="QtMsBuild: could not locate qt.targets, qt.props; project may not build correctly." /></Target>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Target Name="QtMsBuildNotFound" BeforeTargets="CustomBuild;ClCompile" Condition="!Exists('$(QtMsBuild)\qt.targets') or !Exists('$(QtMsBuild)\qt.props')">
+    <Message Importance="High" Text="QtMsBuild: could not locate qt.targets, qt.props; project may not build correctly." />
+  </Target>
   <ImportGroup Label="ExtensionSettings" />
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" />
@@ -43,8 +47,34 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" />
   </ImportGroup>
-  <PropertyGroup Label="UserMacros" /><ImportGroup Condition="Exists('$(QtMsBuild)\qt_defaults.props')"><Import Project="$(QtMsBuild)\qt_defaults.props" /></ImportGroup><PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'"><OutDir>debug\</OutDir><IntDir>$(Platform)\$(Configuration)\</IntDir><TargetName>FPIControl</TargetName><IgnoreImportLibrary>true</IgnoreImportLibrary></PropertyGroup><PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'"><OutDir>release\</OutDir><IntDir>$(Platform)\$(Configuration)\</IntDir><TargetName>FPIControl</TargetName><IgnoreImportLibrary>true</IgnoreImportLibrary><LinkIncremental>false</LinkIncremental></PropertyGroup><PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'"><QtInstall>5.15.2</QtInstall><QtModules>core;gui;widgets;charts</QtModules></PropertyGroup><PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Release|x64'"><QtInstall>5.15.2</QtInstall><QtModules>core;gui;widgets;charts</QtModules></PropertyGroup><ImportGroup Condition="Exists('$(QtMsBuild)\qt.props')"><Import Project="$(QtMsBuild)\qt.props" /></ImportGroup>
-  
+  <PropertyGroup Label="UserMacros" />
+  <ImportGroup Condition="Exists('$(QtMsBuild)\qt_defaults.props')">
+    <Import Project="$(QtMsBuild)\qt_defaults.props" />
+  </ImportGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>debug\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>FPIControl</TargetName>
+    <IgnoreImportLibrary>true</IgnoreImportLibrary>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>release\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>FPIControl</TargetName>
+    <IgnoreImportLibrary>true</IgnoreImportLibrary>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <QtInstall>5.15.2</QtInstall>
+    <QtModules>core;gui;widgets;charts</QtModules>
+  </PropertyGroup>
+  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <QtInstall>5.15.2</QtInstall>
+    <QtModules>core;gui;widgets;charts</QtModules>
+  </PropertyGroup>
+  <ImportGroup Condition="Exists('$(QtMsBuild)\qt.props')">
+    <Import Project="$(QtMsBuild)\qt.props" />
+  </ImportGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>.;.\external\gsl\include;release;.\GeneratedFiles;$(ProgramW6432)\Thorlabs\Kinesis;$(ProgramW6432)\Pico Technology\SDK\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -64,7 +94,8 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level3</WarningLevel>
-    <MultiProcessorCompilation>true</MultiProcessorCompilation></ClCompile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
     <Link>
       <AdditionalDependencies>shell32.lib;ps2000.lib;ps2000a.lib;Thorlabs.MotionControl.KCube.Piezo.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProgramW6432)\Thorlabs\Kinesis;$(ProgramW6432)\Pico Technology\SDK\lib;C:\utils\my_sql\my_sql\lib;C:\utils\postgresql\pgsql\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -98,7 +129,18 @@ copy "$(ProjectDir)assets\loader.gif" "$(TargetDir)"
     <PreBuildEvent>
       <Command>powershell -ExecutionPolicy ByPass -File "$(SolutionDir)FPIControl\src\generateVersionHeader.ps1"</Command>
     </PreBuildEvent>
-  <QtMoc><ExecutionDescription>Moc'ing %(Identity)...</ExecutionDescription><DynamicSource>output</DynamicSource><QtMocDir>.\GeneratedFiles\$(ConfigurationName)</QtMocDir><QtMocFileName>moc_%(Filename).cpp</QtMocFileName></QtMoc><QtUic><ExecutionDescription>Uic'ing %(Identity)...</ExecutionDescription><QtUicDir>.\GeneratedFiles</QtUicDir><QtUicFileName>ui_%(Filename).h</QtUicFileName></QtUic></ItemDefinitionGroup>
+    <QtMoc>
+      <ExecutionDescription>Moc'ing %(Identity)...</ExecutionDescription>
+      <DynamicSource>output</DynamicSource>
+      <QtMocDir>.\GeneratedFiles\$(ConfigurationName)</QtMocDir>
+      <QtMocFileName>moc_%(Filename).cpp</QtMocFileName>
+    </QtMoc>
+    <QtUic>
+      <ExecutionDescription>Uic'ing %(Identity)...</ExecutionDescription>
+      <QtUicDir>.\GeneratedFiles</QtUicDir>
+      <QtUicFileName>ui_%(Filename).h</QtUicFileName>
+    </QtUic>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>.;.\external\gsl\include;debug;.\GeneratedFiles;$(ProgramW6432)\Thorlabs\Kinesis;$(ProgramW6432)\Pico Technology\SDK\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -120,7 +162,9 @@ copy "$(ProjectDir)assets\loader.gif" "$(TargetDir)"
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
       <AdditionalUsingDirectories>
       </AdditionalUsingDirectories>
-    <MultiProcessorCompilation>true</MultiProcessorCompilation></ClCompile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
     <Link>
       <AdditionalDependencies>shell32.lib;ps2000.lib;ps2000a.lib;Thorlabs.MotionControl.KCube.Piezo.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProgramW6432)\Thorlabs\Kinesis;$(ProgramW6432)\Pico Technology\SDK\lib;C:\utils\my_sql\my_sql\lib;C:\utils\postgresql\pgsql\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -152,25 +196,22 @@ copy "$(ProjectDir)assets\loader.gif" "$(TargetDir)"</Command>
     <PreBuildEvent>
       <Command>powershell -ExecutionPolicy ByPass -File "$(SolutionDir)FPIControl\src\generateVersionHeader.ps1"</Command>
     </PreBuildEvent>
-  <QtMoc><ExecutionDescription>Moc'ing %(Identity)...</ExecutionDescription><DynamicSource>output</DynamicSource><QtMocDir>.\GeneratedFiles\$(ConfigurationName)</QtMocDir><QtMocFileName>moc_%(Filename).cpp</QtMocFileName></QtMoc><QtUic><ExecutionDescription>Uic'ing %(Identity)...</ExecutionDescription><QtUicDir>.\GeneratedFiles</QtUicDir><QtUicFileName>ui_%(Filename).h</QtUicFileName></QtUic></ItemDefinitionGroup>
+    <QtMoc>
+      <ExecutionDescription>Moc'ing %(Identity)...</ExecutionDescription>
+      <DynamicSource>output</DynamicSource>
+      <QtMocDir>.\GeneratedFiles\$(ConfigurationName)</QtMocDir>
+      <QtMocFileName>moc_%(Filename).cpp</QtMocFileName>
+    </QtMoc>
+    <QtUic>
+      <ExecutionDescription>Uic'ing %(Identity)...</ExecutionDescription>
+      <QtUicDir>.\GeneratedFiles</QtUicDir>
+      <QtUicFileName>ui_%(Filename).h</QtUicFileName>
+    </QtUic>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\Devices\daq.cpp" />
     <ClCompile Include="src\Devices\DAQ_PS2000.cpp" />
     <ClCompile Include="src\Devices\DAQ_PS2000A.cpp" />
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     <ClCompile Include="src\Devices\kcubepiezo.cpp" />
     <ClCompile Include="src\locking.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -178,14 +219,6 @@ copy "$(ProjectDir)assets\loader.gif" "$(TargetDir)"</Command>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="src\mainwindow.h">
-      
-      
-      
-      
-      
-      
-      
-      
     </QtMoc>
   </ItemGroup>
   <ItemGroup>
@@ -208,91 +241,36 @@ copy "$(ProjectDir)assets\loader.gif" "$(TargetDir)"</Command>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="src\mainwindow.ui">
-      
-      
-      
-      
-      
-      
-      
-      
-      
     </QtUic>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="src\Devices\daq.h">
-      
-      
-      
-      
-      
-      
-      
-      
     </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\circularBuffer.h" />
     <ClInclude Include="src\colors.h" />
     <QtMoc Include="src\Devices\DAQ_PS2000.h">
-      
-      
-      
-      
-      
-      
-      
-      
     </QtMoc>
     <QtMoc Include="src\Devices\DAQ_PS2000A.h">
-      
-      
-      
-      
-      
-      
-      
-      
     </QtMoc>
     <QtMoc Include="src\locking.h">
-      
-      
-      
-      
-      
-      
-      
-      
     </QtMoc>
     <QtMoc Include="src\thread.h">
-      
-      
-      
-      
-      
-      
-      
-      
     </QtMoc>
     <QtMoc Include="src\Devices\kcubepiezo.h">
-      
-      
-      
-      
-      
-      
-      
-      
     </QtMoc>
     <ClInclude Include="src\version.h" />
     <ClInclude Include="src\PDH.h" />
-    
     <ClInclude Include="src\generalmath.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="src\FPIControl.rc" />
   </ItemGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" /><ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')"><Import Project="$(QtMsBuild)\qt.targets" /></ImportGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">
+    <Import Project="$(QtMsBuild)\qt.targets" />
+  </ImportGroup>
   <ImportGroup Label="ExtensionTargets" />
   <ProjectExtensions>
     <VisualStudio>
