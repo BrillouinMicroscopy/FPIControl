@@ -25,13 +25,13 @@ public:
 	}
 
 	template <typename T = double>
-	static T max(std::vector<T> vector) {
+	static T maximum(std::vector<T> vector) {
 		auto result = std::max_element(std::begin(vector), std::end(vector));
 		return *result;
 	}
 
 	template <typename T = double>
-	static T min(std::vector<T> vector) {
+	static T minimum(std::vector<T> vector) {
 		auto result = std::min_element(std::begin(vector), std::end(vector));
 		return *result;
 	}

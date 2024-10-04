@@ -97,21 +97,21 @@ MainWindow::MainWindow(QWidget* parent) noexcept :
 	// set up live view plots
 	liveViewPlots.resize(static_cast<int>(liveViewPlotTypes::COUNT));
 
-	QtCharts::QLineSeries *channelA = new QtCharts::QLineSeries();
+	QLineSeries *channelA = new QLineSeries();
 	channelA->setUseOpenGL(true);
 	channelA->setColor(colors.blue);
 	channelA->setName(QString("Detector signal"));
 	liveViewPlots[static_cast<int>(liveViewPlotTypes::CHANNEL_A)] = channelA;
 
-	QtCharts::QLineSeries *channelB = new QtCharts::QLineSeries();
+	QLineSeries *channelB = new QLineSeries();
 	channelB->setUseOpenGL(true);
 	channelB->setColor(colors.orange);
 	channelB->setName(QString("Reference Signal"));
 	liveViewPlots[static_cast<int>(liveViewPlotTypes::CHANNEL_B)] = channelB;
 	
 	// set up live view chart
-	liveViewChart = new QtCharts::QChart();
-	foreach(QtCharts::QLineSeries* series, liveViewPlots) {
+	liveViewChart = new QChart();
+	foreach(QLineSeries* series, liveViewPlots) {
 		liveViewChart->addSeries(series);
 	}
 	liveViewChart->createDefaultAxes();
@@ -125,45 +125,45 @@ MainWindow::MainWindow(QWidget* parent) noexcept :
 	// set up lock view plots
 	lockViewPlots.resize(static_cast<int>(lockViewPlotTypes::COUNT));
 
-	QtCharts::QLineSeries *voltage = new QtCharts::QLineSeries();
+	QLineSeries *voltage = new QLineSeries();
 	voltage->setUseOpenGL(true);
 	voltage->setColor(colors.orange);
 	voltage->setName(QString("Voltage"));
 	lockViewPlots[static_cast<int>(lockViewPlotTypes::VOLTAGE)] = voltage;
 
-	QtCharts::QLineSeries *errorLock = new QtCharts::QLineSeries();
+	QLineSeries *errorLock = new QLineSeries();
 	errorLock->setUseOpenGL(true);
 	errorLock->setColor(colors.yellow);
 	errorLock->setName(QString("Error signal"));
 	lockViewPlots[static_cast<int>(lockViewPlotTypes::ERRORSIGNAL)] = errorLock;
 
-	QtCharts::QLineSeries *intensityLock = new QtCharts::QLineSeries();
+	QLineSeries *intensityLock = new QLineSeries();
 	intensityLock->setUseOpenGL(true);
 	intensityLock->setColor(colors.blue);
 	intensityLock->setName(QString("Signal amplitude"));
 	lockViewPlots[static_cast<int>(lockViewPlotTypes::AMPLITUDE)] = intensityLock;
 
-	QtCharts::QLineSeries *piezoVoltage = new QtCharts::QLineSeries();
+	QLineSeries *piezoVoltage = new QLineSeries();
 	piezoVoltage->setUseOpenGL(true);
 	piezoVoltage->setColor(colors.purple);
 	piezoVoltage->setName(QString("Piezo Voltage"));
 	lockViewPlots[static_cast<int>(lockViewPlotTypes::PIEZOVOLTAGE)] = piezoVoltage;
 
-	QtCharts::QLineSeries *errorMean = new QtCharts::QLineSeries();
+	QLineSeries *errorMean = new QLineSeries();
 	errorMean->setUseOpenGL(true);
 	errorMean->setColor(colors.green);
 	errorMean->setName(QString("Error signal mean"));
 	lockViewPlots[static_cast<int>(lockViewPlotTypes::ERRORSIGNALMEAN)] = errorMean;
 
-	QtCharts::QLineSeries *errorStd = new QtCharts::QLineSeries();
+	QLineSeries *errorStd = new QLineSeries();
 	errorStd->setUseOpenGL(true);
 	errorStd->setColor(colors.red);
 	errorStd->setName(QString("Error signal standard deviation"));
 	lockViewPlots[static_cast<int>(lockViewPlotTypes::ERRORSIGNALSTD)] = errorStd;
 
 	// set up lock view chart
-	lockViewChart = new QtCharts::QChart();
-	foreach(QtCharts::QLineSeries* series, lockViewPlots) {
+	lockViewChart = new QChart();
+	foreach(QLineSeries* series, lockViewPlots) {
 		lockViewChart->addSeries(series);
 	}
 	lockViewChart->createDefaultAxes();
@@ -176,21 +176,21 @@ MainWindow::MainWindow(QWidget* parent) noexcept :
 	// set up scan view plots
 	scanViewPlots.resize(static_cast<int>(scanViewPlotTypes::COUNT));
 
-	QtCharts::QLineSeries *intensity = new QtCharts::QLineSeries();
+	QLineSeries *intensity = new QLineSeries();
 	intensity->setUseOpenGL(true);
 	intensity->setColor(colors.orange);
 	intensity->setName(QString("Intensity"));
 	scanViewPlots[static_cast<int>(scanViewPlotTypes::INTENSITY)] = intensity;
 
-	QtCharts::QLineSeries *error = new QtCharts::QLineSeries();
+	QLineSeries *error = new QLineSeries();
 	error->setUseOpenGL(true);
 	error->setColor(colors.yellow);
 	error->setName(QString("Error signal"));
 	scanViewPlots[static_cast<int>(scanViewPlotTypes::ERRORSIGNAL)] = error;
 
 	// set up live view chart
-	scanViewChart = new QtCharts::QChart();
-	foreach(QtCharts::QLineSeries* series, scanViewPlots) {
+	scanViewChart = new QChart();
+	foreach(QLineSeries* series, scanViewPlots) {
 		scanViewChart->addSeries(series);
 	}
 	scanViewChart->createDefaultAxes();
@@ -203,7 +203,7 @@ MainWindow::MainWindow(QWidget* parent) noexcept :
 	// set live view chart as default chart
 	ui->plotAxes->setChart(liveViewChart);
 	ui->plotAxes->setRenderHint(QPainter::Antialiasing);
-	ui->plotAxes->setRubberBand(QtCharts::QChartView::RectangleRubberBand);
+	ui->plotAxes->setRubberBand(QChartView::RectangleRubberBand);
 
 	// set default values of GUI elements
 	SCAN_SETTINGS scanSettings = m_lockingControl->getScanSettings();
@@ -491,7 +491,7 @@ void MainWindow::initSettingsDialog() {
 	vLayout->addWidget(buttonWidget);
 
 	QHBoxLayout *buttonLayout = new QHBoxLayout(buttonWidget);
-	buttonLayout->setMargin(0);
+	buttonLayout->setContentsMargins(0, 0, 0, 0);
 
 	QPushButton *okButton = new QPushButton();
 	okButton->setText(tr("OK"));
@@ -528,47 +528,47 @@ void MainWindow::selectDAQ(int index) {
 void MainWindow::connectMarkers() {
 	// Connect all markers to handler
 	QMetaObject::Connection connection;
-	foreach(QtCharts::QLegendMarker* marker, liveViewChart->legend()->markers()) {
+	foreach(QLegendMarker* marker, liveViewChart->legend()->markers()) {
 		// Disconnect possible existing connection to avoid multiple connections
 		QWidget::disconnect(
 			marker,
-			&QtCharts::QLegendMarker::clicked,
+			&QLegendMarker::clicked,
 			this,
 			&MainWindow::handleMarkerClicked
 		);
 		connection = QWidget::connect(
 			marker,
-			&QtCharts::QLegendMarker::clicked,
+			&QLegendMarker::clicked,
 			this,
 			&MainWindow::handleMarkerClicked
 		);
 	}
-	foreach(QtCharts::QLegendMarker* marker, lockViewChart->legend()->markers()) {
+	foreach(QLegendMarker* marker, lockViewChart->legend()->markers()) {
 		// Disconnect possible existing connection to avoid multiple connections
 		QWidget::disconnect(
 			marker,
-			&QtCharts::QLegendMarker::clicked,
+			&QLegendMarker::clicked,
 			this,
 			&MainWindow::handleMarkerClicked
 		);
 		connection = QWidget::connect(
 			marker,
-			&QtCharts::QLegendMarker::clicked,
+			&QLegendMarker::clicked,
 			this,
 			&MainWindow::handleMarkerClicked
 		);
 	}
-	foreach(QtCharts::QLegendMarker* marker, scanViewChart->legend()->markers()) {
+	foreach(QLegendMarker* marker, scanViewChart->legend()->markers()) {
 		// Disconnect possible existing connection to avoid multiple connections
 		QWidget::disconnect(
 			marker,
-			&QtCharts::QLegendMarker::clicked,
+			&QLegendMarker::clicked,
 			this,
 			&MainWindow::handleMarkerClicked
 		);
 		connection = QWidget::connect(
 			marker,
-			&QtCharts::QLegendMarker::clicked,
+			&QLegendMarker::clicked,
 			this,
 			&MainWindow::handleMarkerClicked
 		);
@@ -576,11 +576,11 @@ void MainWindow::connectMarkers() {
 }
 
 void MainWindow::handleMarkerClicked() {
-	QtCharts::QLegendMarker* marker = qobject_cast<QtCharts::QLegendMarker*> (sender());
+	QLegendMarker* marker = qobject_cast<QLegendMarker*> (sender());
 	Q_ASSERT(marker);
 
 	switch (marker->type()) {
-		case QtCharts::QLegendMarker::LegendMarkerTypeXY: {
+		case QLegendMarker::LegendMarkerTypeXY: {
 			// Toggle visibility of series
 			marker->series()->setVisible(!marker->series()->isVisible());
 
@@ -739,7 +739,7 @@ void MainWindow::updateLiveView() {
 		}
 
 		gsl::index channel{ 0 };
-		foreach(QtCharts::QLineSeries* series, liveViewPlots) {
+		foreach(QLineSeries* series, liveViewPlots) {
 			if (series->isVisible()) {
 				series->replace(data[channel]);
 			}
@@ -782,7 +782,7 @@ void MainWindow::updateLockView() {
 		);
 
 		// If there are more points than desired, remove the first one
-		foreach(QtCharts::QLineSeries* series, lockViewPlots) {
+		foreach(QLineSeries* series, lockViewPlots) {
 			if (series->count() >= m_lockingControl->lockData.storageSize) {
 				series->remove(0);
 			}
@@ -872,13 +872,13 @@ void MainWindow::on_selectDisplay_activated(const int index) {
 		case VIEWS::LIVE:
 			// it is necessary to hide the series, because they do not get removed
 			// after setChart in case useOpenGL == true (bug in QT?)
-			foreach(QtCharts::QLineSeries* series, scanViewPlots) {
+			foreach(QLineSeries* series, scanViewPlots) {
 				series->setVisible(false);
 			}
-			foreach(QtCharts::QLineSeries* series, lockViewPlots) {
+			foreach(QLineSeries* series, lockViewPlots) {
 				series->setVisible(false);
 			}
-			foreach(QtCharts::QLineSeries* series, liveViewPlots) {
+			foreach(QLineSeries* series, liveViewPlots) {
 				series->setVisible(true);
 			}
 			ui->plotAxes->setChart(liveViewChart);
@@ -889,13 +889,13 @@ void MainWindow::on_selectDisplay_activated(const int index) {
 		case VIEWS::LOCK:
 			// it is necessary to hide the series, because they do not get removed
 			// after setChart in case useOpenGL == true (bug in QT?)
-			foreach(QtCharts::QLineSeries* series, liveViewPlots) {
+			foreach(QLineSeries* series, liveViewPlots) {
 				series->setVisible(false);
 			}
-			foreach(QtCharts::QLineSeries* series, scanViewPlots) {
+			foreach(QLineSeries* series, scanViewPlots) {
 				series->setVisible(false);
 			}
-			foreach(QtCharts::QLineSeries* series, lockViewPlots) {
+			foreach(QLineSeries* series, lockViewPlots) {
 				series->setVisible(true);
 			}
 			ui->plotAxes->setChart(lockViewChart);
@@ -906,13 +906,13 @@ void MainWindow::on_selectDisplay_activated(const int index) {
 		case VIEWS::SCAN:
 			// it is necessary to hide the series, because they do not get removed
 			// after setChart in case useOpenGL == true (bug in QT?)
-			foreach(QtCharts::QLineSeries* series, liveViewPlots) {
+			foreach(QLineSeries* series, liveViewPlots) {
 				series->setVisible(false);
 			}
-			foreach(QtCharts::QLineSeries* series, lockViewPlots) {
+			foreach(QLineSeries* series, lockViewPlots) {
 				series->setVisible(false);
 			}
-			foreach(QtCharts::QLineSeries* series, scanViewPlots) {
+			foreach(QLineSeries* series, scanViewPlots) {
 				series->setVisible(true);
 			}
 			ui->plotAxes->setChart(scanViewChart);

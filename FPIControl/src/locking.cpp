@@ -156,8 +156,8 @@ void Locking::scan() {
 	std::vector<double> tau(values[0].begin(), values[0].end());
 	std::vector<double> reference(values[1].begin(), values[1].end());
 
-	double tau_max = generalmath::max(tau);
-	double tau_min = generalmath::min(tau);
+	double tau_max = generalmath::maximum(tau);
+	double tau_min = generalmath::minimum(tau);
 
 	// normalize transmission signal
 	std::transform(tau.begin(), tau.end(), tau.begin(),
@@ -194,8 +194,8 @@ void Locking::lock() {
 	std::vector<double> reference(values[1].begin(), values[1].end());
 
 	//double tau_mean = generalmath::mean(tau);
-	double tau_max = generalmath::max(tau);
-	double tau_min = generalmath::min(tau);
+	double tau_max = generalmath::maximum(tau);
+	double tau_min = generalmath::minimum(tau);
 	double amplitude = tau_max - tau_min;
 
 	if (amplitude != 0) {

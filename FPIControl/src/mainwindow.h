@@ -113,12 +113,12 @@ private:
 
 	Ui::MainWindow* ui;
 	Thread m_acquisitionThread;
-	QtCharts::QChart* liveViewChart;
-	QtCharts::QChart* lockViewChart;
-	QtCharts::QChart* scanViewChart;
-	QVector<QtCharts::QLineSeries*> liveViewPlots;
-	QVector<QtCharts::QLineSeries*> lockViewPlots;
-	QVector<QtCharts::QLineSeries*> scanViewPlots;
+	QChart* liveViewChart;
+	QChart* lockViewChart;
+	QChart* scanViewChart;
+	QVector<QLineSeries*> liveViewPlots;
+	QVector<QLineSeries*> lockViewPlots;
+	QVector<QLineSeries*> scanViewPlots;
 	daq* m_dataAcquisition{ nullptr };
 	kcubepiezo* m_piezoControl{ nullptr };
 	std::string m_serialNo{};

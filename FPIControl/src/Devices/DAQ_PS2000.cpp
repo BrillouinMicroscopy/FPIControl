@@ -7,6 +7,8 @@
  * Public definitions
  */
 
+using namespace std::chrono_literals;
+
 daq_PS2000::daq_PS2000(QObject *parent) :
 	daq(parent,
 		{ 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000 },
@@ -78,7 +80,7 @@ std::array<std::vector<int32_t>, PS2000_MAX_CHANNELS> daq_PS2000::collectBlockDa
 	);
 
 	while (!ps2000_ready(m_unitOpened.handle)) {
-		Sleep(10);
+		std::this_thread::sleep_for(10ms);
 	}
 
 	ps2000_stop(m_unitOpened.handle);

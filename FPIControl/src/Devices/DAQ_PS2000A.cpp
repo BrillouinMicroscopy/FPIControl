@@ -7,6 +7,8 @@
  * Public definitions
  */
 
+using namespace std::chrono_literals;
+
 daq_PS2000A::daq_PS2000A(QObject *parent) :
 	daq(parent,
 		{ 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000 },
@@ -95,7 +97,7 @@ std::array<std::vector<int32_t>, PS2000A_MAX_CHANNELS> daq_PS2000A::collectBlock
 	int16_t ready{ 0 };
 	ps2000aIsReady(m_unitOpened.handle, &ready);
 	while (!ready) {
-		Sleep(10);
+		std::this_thread::sleep_for(10ms);
 		ps2000aIsReady(m_unitOpened.handle, &ready);
 	}
 
@@ -269,10 +271,10 @@ void daq_PS2000A::get_info(void) {
 			m_unitOpened.firstRange = PS2000A_50MV;
 			m_unitOpened.lastRange = PS2000A_20V;
 			m_unitOpened.noOfChannels = QUAD_SCOPE;
-			m_unitOpened.hasAdvancedTriggering = TRUE;
-			m_unitOpened.hasSignalGenerator = TRUE;
-			m_unitOpened.hasEts = TRUE;
-			m_unitOpened.hasFastStreaming = TRUE;
+			m_unitOpened.hasAdvancedTriggering = true;
+			m_unitOpened.hasSignalGenerator = true;
+			m_unitOpened.hasEts = true;
+			m_unitOpened.hasFastStreaming = true;
 			m_unitOpened.awgBufferSize = 4096;
 			m_unitOpened.bufferSize = 16000;
 			break;
