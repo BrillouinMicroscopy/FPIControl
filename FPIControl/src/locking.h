@@ -26,8 +26,8 @@ typedef struct SCAN_DATA {
 	bool m_abort{ false };			// should the scan be aborted
 	int32_t nrSteps{ 0 };
 	int pass{ 0 };
-	std::vector<double> voltages;	// [µV] output voltage (<int32_t> is sufficient for this)
-	std::vector<int32_t> intensity;	// [µV] measured intensity (<int32_t> is fine)
+	std::vector<double> voltages;	// [microV] output voltage (<int32_t> is sufficient for this)
+	std::vector<int32_t> intensity;	// [microV] measured intensity (<int32_t> is fine)
 	std::vector<double> error;		// PDH error signal
 } SCAN_DATA;
 
@@ -42,7 +42,7 @@ typedef struct LOCK_SETTINGS {
 	double integral{ 1 };			//		control parameter of the integral part
 	double derivative{ 0 };			//		control parameter of the derivative part
 	double frequency{ 5000 };		// [Hz] approx. frequency of the reference signal
-	double phase{ 180 };			// [°]	phase shift between reference and detector signal
+	double phase{ 180 };			// [degree]	phase shift between reference and detector signal
 	int lockingTimeout{ 100 };		// [ms]	time until next locking run
 	bool compensate{ true };		//		compensate the offset?
 	int compensationTimeout{ 25 };	//		cycles until next compensation
@@ -55,7 +55,7 @@ typedef struct LOCK_SETTINGS {
 typedef struct LOCK_DATA {
 	std::vector<std::chrono::time_point<std::chrono::system_clock>> time;		// [s]	time vector
 	std::vector<double> voltageDaq;	// [V]	output voltage
-	std::vector<int32_t> amplitude;		// [µV]	measured intensity (<int32_t> is fine)
+	std::vector<int32_t> amplitude;		// [microV]	measured intensity (<int32_t> is fine)
 	std::vector<double> error;			// [1]	PDH error signal
 	std::vector<double> voltagePiezo;	// [V]	output voltage
 	double iError{ 0 };					// [1]	integral value of the error signal
